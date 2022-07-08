@@ -1,0 +1,2 @@
+# YAATAP
+yetAnotherAutoTranscriptAssemblyPipeline
