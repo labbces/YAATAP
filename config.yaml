@@ -1,0 +1,15 @@
+default-resources: [mem_free=1]
+
+software:
+        fastq-dump: /Storage/progs/sratoolkit.2.9.6-centos_linux64/bin/fastq-dump
+        fastqc: /Storage/progs/FastQC/fastqc
+        bbduk: /Storage/progs/bbmap_35.85/bbduk2.sh
+        kraken2: /Storage/progs/miniconda2/bin/kraken2
+        create_index: software/create_fastq_indexdb.py
+        contfree_ngs: software/ContFree-NGS.py
+        trinity: /Storage/progs/trinityrnaseq-Trinity-v2.8.5/Trinity
+        cd_hit_est: /Storage/progs/cd-hit-v4.8.1-2019-0228/cd-hit-est
+        extract_contigs: software/extractSequencesWithMinLength.pl
+        busco: /Storage/progs/BUSCO3/scripts/run_BUSCO.py
+        transrate: /Storage/progs/transrate-1.0.3-linux-x86_64/transrate
+        salmon: /Storage/progs/salmon-1.3.0_linux_x86_64/bin/salmon
