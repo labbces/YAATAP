@@ -26,8 +26,8 @@ configfile: "config.yaml"
 import pandas as pd
 import yaml
 
-samples = pd.read_csv("data/samples_Q200.csv")
-parts = pd.read_csv("data/parts.csv")
+samples = pd.read_csv("samples.csv")
+parts = pd.read_csv("parts.csv")
 GENOTYPE="Q200"
 
 #Software executable
