@@ -1,0 +1,116 @@
+#!/usr/bin/env python
+
+# An Automated Pipeline to Transcriptome Assembly and Quality Assessment
+#
+# Author: Felipe Vaz Peres
+#
+# Preparation:
+# 1) Setup 'config.yaml' file  with softwares path
+# 2) Create 'samples_{genotype}.csv' file and add SRA identifiers (e.g SRR5258954,SRR5258955,SRR5258994,SRR5258995)
+# 3) Create 'parts.csv' file and add the value of parts you want the kraken file to be split (e.g 00,01,02 for 3 equal parts)
+# 4) Setup 'GENOTYPE' variable with the genotype name (e.g GENOTYPE=QN05-1509)
+#
+# Usage (remove the -n to dont show dry-run and start the jobs):
+# 1) Load modules: BUSCO/3.0; transrate/1.0.3
+# 2) Run the following command:
+# snakemake -np -s Snakefile \
+# --cluster "qsub -q all.q -V -cwd -l h={params.server} -pe smp {threads} -l mem_free={resources.mem_free}G" \
+# --jobs 10
+#
+# Build DAG:
+#
+# snakemake -s Snakefile --dag | dot -Tsvg > dag.svg
+
+configfile: "config.yaml1"
+
+import pandas as pd
+import yaml
+
+samples = pd.read_csv("samples_TEST.csv")
+GENOTYPE='TEST'
+
+salmon = config["software"]["salmon"]
+
+rule all:
+	input:
+		expand("MyAssembly_{genotype}/1_raw_reads_in_fastq_format/{sample}_1.fastq", genotype=GENOTYPE, sample=samples),
+		expand("MyAssembly_{genotype}/1_raw_reads_in_fastq_format/{sample}_2.fastq", genotype=GENOTYPE, sample=samples),
+		expand("MyAssembly_{genotype}/stranded/{sample}/aux_info/meta_info.json", genotype=GENOTYPE, sample=samples),
+		expand("samples_{genotype}2.csv", genotype=GENOTYPE)
+
+rule download_fastq:
+	output:
+		R1 = "MyAssembly_{genotype}/1_raw_reads_in_fastq_format/{sample}_1.fastq",
+		R2 = "MyAssembly_{genotype}/1_raw_reads_in_fastq_format/{sample}_2.fastq"
+	threads: 1
+	resources:
+		mem_free=1
+	params:
+		genotype="{genotype}",
+		server="figsrv"
+	log:
+		"MyAssembly_{genotype}/logs/download_fastq/{sample}.log"
+	shell:
+		"""
+		cd MyAssembly_{params.genotype}/1_raw_reads_in_fastq_format && \
+		ffq --ftp {wildcards.sample} | grep -Eo '\"url\": \"[^\"]*\"' | grep -o '\"[^\"]*\"$' | xargs wget && \
+		gzip -dc < {wildcards.sample}_1.fastq.gz > {wildcards.sample}_1.fastq && \
+		gzip -dc < {wildcards.sample}_2.fastq.gz > {wildcards.sample}_2.fastq && \
+		cd -
+		"""
+rule get_stranded:
+	input:
+                salmon_index = "MyAssembly_{genotype}/10_salmon/index/",
+                R1 = "MyAssembly_{genotype}/1_raw_reads_in_fastq_format/{sample}_1.fastq",
+                R2 = "MyAssembly_{genotype}/1_raw_reads_in_fastq_format/{sample}_2.fastq"
+	output:
+		stranded = "MyAssembly_{genotype}/stranded/{sample}/aux_info/meta_info.json"
+	params:
+                server="figsrv",
+		genotype="{genotype}"	
+	resources:
+                mem_free=1
+	threads: 2
+	log:
+                "MyAssembly_{genotype}/logs/stranded/{sample}.log"
+	shell:
+		"/usr/bin/time -v {salmon} quant -i {input.salmon_index} -l A -1 {input.R1} -2 {input.R2} -o MyAssembly_{params.genotype}/stranded/{wildcards.sample} 2> {log}"
+	
+rule filter_stranded:
+	input:
+		stranded = expand("MyAssembly_{genotype}/stranded/{sample}/aux_info/meta_info.json", genotype=GENOTYPE, sample=samples)
+	output:
+		lib = "samples_{genotype}2.csv"
+	threads: 1
+	resources:
+		mem_free=1
+	params:
+		genotype="{genotype}",
+		server="figsrv"
+#	log:
+#		"MyAssembly_{genotype}/logs/filter_stranded/{genotype}.log"
+	shell:
+		"""
+                jq -r '.library_types[]' {input.stranded} > MyAssembly_{params.genotype}/stranded/lib.txt && \
+		ls MyAssembly_{params.genotype}/stranded/ | grep SRR > MyAssembly_{params.genotype}/stranded/id.txt && \
+		paste MyAssembly_{params.genotype}/stranded/id.txt MyAssembly_{params.genotype}/stranded/lib.txt -d, > MyAssembly_{params.genotype}/stranded/stranded_status.csv && \
+		grep .S MyAssembly_{params.genotype}/stranded/stranded_status.csv > MyAssembly_{params.genotype}/stranded/stranded_samples.csv && \
+		cut -f1 -d, MyAssembly_{params.genotype}/stranded/stranded_samples.csv | paste -s -d, > MyAssembly_{params.genotype}/stranded/new_samples.csv && \
+		cp MyAssembly_{params.genotype}/stranded/new_samples.csv samples_{params.genotype}2.csv && \
+		cp samples_{params.genotype}2.csv samples_{params.genotype}.csv
+        	"""       	
+#	cut -f1 -d, MyAssembly_{params.genotype}/stranded/stranded_samples.csv | printf '%s\n' | paste -sd, > samples_{params.genotype}2.csv
+rule salmon_index:
+	input:
+		transcriptome="rna.fna"
+	output:
+		salmon_index=directory("MyAssembly_{genotype}/10_salmon/index/")
+	params:
+		server="figsrv"
+	resources:
+		mem_free=1
+	threads: 2
+	log:
+		"MyAssembly_{genotype}/logs/salmon_index/{genotype}.log"
+	shell:
+		"/usr/bin/time -v {salmon} index -t {input.transcriptome} -p {threads} -i {output.salmon_index} 2> {log}"

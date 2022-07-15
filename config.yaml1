@@ -1,0 +1,4 @@
+default-resources: [mem_free=1]
+
+software:
+       salmon: /Storage/progs/salmon-1.3.0_linux_x86_64/bin/salmon
