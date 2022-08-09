@@ -21,7 +21,7 @@
 #
 # snakemake -s Snakefile --dag | dot -Tsvg > dag.svg
 
-configfile: "config.yaml2"
+configfile: "config.yaml"
 
 import pandas as pd
 import yaml
@@ -163,7 +163,7 @@ rule split_kraken_output:
 	log:
 		"MyAssembly_{genotype}/logs/split_kraken_output/{sample}.log"
 	shell:
-		"split --number=l/10 -d --additional-suffix=.kraken {input} MyAssembly_{params.genotype}/5_trimmed_reads_kraken_reports/parts/{params.identificator}.trimmed_ 2> {log}"
+		"split --number=l/3 -d --additional-suffix=.kraken {input} MyAssembly_{params.genotype}/5_trimmed_reads_kraken_reports/parts/{params.identificator}.trimmed_ 2> {log}"
 
 rule create_index_contfree_ngs:
 	input: 
@@ -177,7 +177,7 @@ rule create_index_contfree_ngs:
 		mem_free=1
 	params:
 		genotype="{genotype}",
-		server="bcmsrv"
+		server="figsrv"
 	log:
 		"MyAssembly_{genotype}/logs/create_index/{sample}.log"
 	shell:
@@ -198,11 +198,11 @@ rule contfree_ngs:
 		mem_free=1
 	params:
 		genotype="{genotype}",
-		server="bcmsrv"
+			server="figsrv"
 	log:
 		"/Storage/data1/jorge.munoz/SCPT/snakemakePipeline/MyAssembly_{genotype}/logs/contfree_ngs/{sample}.{part}.log"
 	shell:
-		"python3.8 {contfree_ngs} --taxonomy {input.kraken_file} --s p --R1 {input.R1} --R2 {input.R2} --taxon 4558 -o MyAssembly_{params.genotype}/6_contamination_removal/parts/ 2> {log}"
+		"python3.8 {contfree_ngs} --taxonomy {input.kraken_file} --s p --R1 {input.R1} --R2 {input.R2} --taxon 33090 -o MyAssembly_{params.genotype}/6_contamination_removal/parts/ 2> {log}"
 
 rule merge:
 	input:
@@ -242,6 +242,7 @@ rule trinity:
 	output: 
 		k25 = "MyAssembly_{genotype}/7_trinity_assembly/MyAssembly_{genotype}_trinity_k25.Trinity.fasta",
 		k31 = "MyAssembly_{genotype}/7_trinity_assembly/MyAssembly_{genotype}_trinity_k31.Trinity.fasta"
+	threads: 10
 	params:
 		filtered_total_R1=','.join(filtered_total_R1),
 		filtered_total_R2=','.join(filtered_total_R2),
@@ -250,14 +251,14 @@ rule trinity:
 		server="figsrv",
 		genotype="{genotype}"
 	resources: 
-		mem_free=100
+		mem_free=50
 	threads: 10
 	log:
 		k25 = "MyAssembly_{genotype}/logs/trinity/{genotype}.k25.log",
 		k31 = "MyAssembly_{genotype}/logs/trinity/{genotype}.k31.log"
 	shell:
-		"/usr/bin/time -v {trinity} --seqType fq --left {params.filtered_total_R1},{params.unclassified_total_R1} --right {params.filtered_total_R2},{params.unclassified_total_R2} --SS_lib_type RF --max_memory 10G --min_contig_length 200 --CPU {threads} --output MyAssembly_{params.genotype}/7_trinity_assembly/MyAssembly_{params.genotype}_trinity_k25 --full_cleanup --no_normalize_reads --KMER_SIZE 25 2> {log.k25};"
-		"/usr/bin/time -v {trinity} --seqType fq --left {params.filtered_total_R1},{params.unclassified_total_R1} --right {params.filtered_total_R2},{params.unclassified_total_R2} --SS_lib_type RF --max_memory 10G --min_contig_length 200 --CPU {threads} --output MyAssembly_{params.genotype}/7_trinity_assembly/MyAssembly_{params.genotype}_trinity_k25 --full_cleanup --no_normalize_reads --KMER_SIZE 31 2> {log.k31}"
+		#"/usr/bin/time -v {trinity} --seqType fq --left {params.filtered_total_R1},{params.unclassified_total_R1} --right {params.filtered_total_R2},{params.unclassified_total_R2} --SS_lib_type RF --max_memory 10G --min_contig_length 200 --CPU {threads} --output MyAssembly_{params.genotype}/7_trinity_assembly/MyAssembly_{params.genotype}_trinity_k25 --full_cleanup --no_normalize_reads --KMER_SIZE 25 2> {log.k25};"
+		"/usr/bin/time -v {trinity} --seqType fq --left {params.filtered_total_R1},{params.unclassified_total_R1} --right {params.filtered_total_R2},{params.unclassified_total_R2} --SS_lib_type RF --max_memory 10G --min_contig_length 200 --CPU {threads} --output MyAssembly_{params.genotype}/7_trinity_assembly/MyAssembly_{params.genotype}_trinity_k31 --full_cleanup --no_normalize_reads --KMER_SIZE 31 2> {log.k31}"
 
 rule cd_hit_est:
 	input: 

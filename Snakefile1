@@ -30,6 +30,7 @@ samples = pd.read_csv("samples_TEST.csv")
 GENOTYPE='TEST'
 
 salmon = config["software"]["salmon"]
+good_headers = config["software"]["good_headers"]
 
 rule all:
 	input:
@@ -56,6 +57,11 @@ rule download_fastq:
 		ffq --ftp {wildcards.sample} | grep -Eo '\"url\": \"[^\"]*\"' | grep -o '\"[^\"]*\"$' | xargs wget && \
 		gzip -dc < {wildcards.sample}_1.fastq.gz > {wildcards.sample}_1.fastq && \
 		gzip -dc < {wildcards.sample}_2.fastq.gz > {wildcards.sample}_2.fastq && \
+		python2.7 {good_headers} -1 {wildcards.sample}_2.fastq -2 {wildcards.sample}_1.fastq && \
+		rm {wildcards.sample}_1.fastq.gz && \
+		rm {wildcards.sample}_2.fastq.gz && \
+		mv sraheaderfixed_{wildcards.sample}_2.fastq {wildcards.sample}_2.fastq && \
+		mv sraheaderfixed_{wildcards.sample}_1.fastq {wildcards.sample}_1.fastq && \
 		cd -
 		"""
 rule get_stranded:

@@ -5,8 +5,8 @@ software:
         fastqc: /Storage/progs/FastQC/fastqc
         bbduk: /Storage/progs/bbmap_35.85/bbduk2.sh
         kraken2: /Storage/progs/miniconda2/bin/kraken2
-        create_index: /Storage/data1/jorge.munoz/SCPT/snakemakePipeline/create_fastq_indexdb.py
-        contfree_ngs: /Storage/data1/jorge.munoz/SCPT/snakemakePipeline/ContFree-NGS.py
+        create_index: create_fastq_indexdb.py
+        contfree_ngs: /Storage/data1/jorge.munoz/SORGO/ContFree-NGS/ContFree-NGS.py
         trinity: /Storage/progs/trinityrnaseq-Trinity-v2.8.5/Trinity
         cd_hit_est: /Storage/progs/cd-hit-v4.8.1-2019-0228/cd-hit-est
         extract_contigs: /Storage/progs/bces_scripts/extractSequencesWithMinLength.pl
