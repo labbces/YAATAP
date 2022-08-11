@@ -108,7 +108,7 @@ rule filter_stranded:
 #	cut -f1 -d, MyAssembly_{params.genotype}/stranded/stranded_samples.csv | printf '%s\n' | paste -sd, > samples_{params.genotype}2.csv
 rule salmon_index:
 	input:
-		transcriptome="rna.fna"
+		transcriptome="MyAssembly_{genotype}/GCF_000003195.3_rna.fna"
 	output:
 		salmon_index=directory("MyAssembly_{genotype}/10_salmon/index/")
 	params:
