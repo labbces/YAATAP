@@ -104,6 +104,7 @@ rule filter_stranded:
 		cut -f1 -d, MyAssembly_{params.genotype}/stranded/stranded_samples.csv | paste -s -d, > MyAssembly_{params.genotype}/stranded/new_samples.csv && \
 		cp MyAssembly_{params.genotype}/stranded/new_samples.csv samples_{params.genotype}2.csv && \
 		cp samples_{params.genotype}2.csv samples_{params.genotype}.csv
+		rm MyAssembly_{params.genotype}/stranded/lib.txt
         	"""       	
 #	cut -f1 -d, MyAssembly_{params.genotype}/stranded/stranded_samples.csv | printf '%s\n' | paste -sd, > samples_{params.genotype}2.csv
 rule salmon_index:
