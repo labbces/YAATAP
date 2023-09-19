@@ -1,37 +1,33 @@
 #!/usr/bin/env python
 
-# An Automated Pipeline to Transcriptome Assembly and Quality Assessment
-#
-# Author: Felipe Vaz Peres
-#
-# Preparation:
-# 1) Setup 'config.yaml' file  with softwares path
-# 2) Create 'samples_{genotype}.csv' file and add SRA identifiers (e.g SRR5258954,SRR5258955,SRR5258994,SRR5258995)
-# 3) Create 'parts.csv' file and add the value of parts you want the kraken file to be split (e.g 00,01,02 for 3 equal parts)
-# 4) Setup 'GENOTYPE' variable with the genotype name (e.g GENOTYPE=QN05-1509)
-#
-# Usage (remove the -n to dont show dry-run and start the jobs):
-# 1) Load modules: BUSCO/3.0; transrate/1.0.3
-# 2) Run the following command:
-# snakemake -np -s Snakefile \
-# --cluster "qsub -q all.q -V -cwd -l h={params.server} -pe smp {threads} -l mem_free={resources.mem_free}G" \
-# --jobs 10
-#
-# Build DAG:
-#
-# snakemake -s Snakefile --dag | dot -Tsvg > dag.svg
+#Usage:
+#snakemake -p -k --resources load=6 -s Snakefile --rerun-incomplete --cluster "qsub -q all.q -V -cwd -pe smp {threads}" --jobs 6 --jobname "{rulename}.{jobid}"
 
 configfile: "config.yaml"
 
 import pandas as pd
+from pandas.errors import EmptyDataError
 import yaml
+import os
 
-samples = pd.read_csv("samples.csv")
+# capturando o nome do arquivo "_samples.csv" na pasta de execucao
+sample_file = [file for file in os.listdir() if file.endswith('_samples.csv')][0]
+
+# extraindo o genotipo do nome do arquivo "_samples.csv"
+GENOTYPE = os.path.splitext(sample_file)[0].replace('_samples', '')
+
+# extraindo samples separadas por virgula
+samples = pd.read_csv(GENOTYPE+'_samples.csv')
+
+# reference transcriptome
+reference_transcriptome = "/Storage/data1/riano/Sugarcane/Pantranscriptome/Assemblies/CD-HIT_48_genotypes_transcriptome_salmonInx/"
+
+# split kraken in parts
 parts = pd.read_csv("parts.csv")
-GENOTYPE="Q200"
 
 #Software executable
-fastq_dump = config["software"]["fastq-dump"]
+ffq = config["software"]["ffq"]
+jq = config["software"]["jq"]
 fastqc = config["software"]["fastqc"]
 bbduk = config["software"]["bbduk"]
 kraken2 = config["software"]["kraken2"]
@@ -55,20 +51,32 @@ rule all:
 		expand("MyAssembly_{genotype}/9_transrate/transrate_comparative_Shorgum_vs_{genotype}", genotype=GENOTYPE),
 		expand("MyAssembly_{genotype}/10_salmon/quant/", genotype=GENOTYPE)
 		
+
 rule download_fastq:
+	"""
+	Baixa os arquivos brutos (fastq.gz) das leituras 1 e 2 das amostras do genotipo {params.genotype}.
+	"""
+	priority: 1
 	output:
 		R1 = "MyAssembly_{genotype}/1_raw_reads_in_fastq_format/{sample}_1.fastq",
 		R2 = "MyAssembly_{genotype}/1_raw_reads_in_fastq_format/{sample}_2.fastq"
 	threads: 1
 	resources:
-		mem_free=1
+		load=6
 	params:
 		genotype="{genotype}",
 		server="figsrv"
 	log:
 		"MyAssembly_{genotype}/logs/download_fastq/{sample}.log"
+	name: "download_fastq"
 	shell:
-		"{fastq_dump} --defline-seq '@$sn[_$rn]/$ri' --split-files {wildcards.sample} -O MyAssembly_{params.genotype}/1_raw_reads_in_fastq_format 2> {log}"
+		"""
+		cd MyAssembly_{params.genotype}/1_raw_reads_in_fastq_format && \
+		{ffq} --ftp {wildcards.sample} | grep -Eo '\"url\": \"[^\"]*\"' | grep -o '\"[^\"]*\"$' | xargs wget && \
+		gzip -dc < {wildcards.sample}_1.fastq.gz > {wildcards.sample}_1.fastq && \
+		gzip -dc < {wildcards.sample}_2.fastq.gz > {wildcards.sample}_2.fastq && \
+		cd -
+		"""
 
 rule fastqc:
 	input:
@@ -81,6 +89,7 @@ rule fastqc:
                 zip_2 = "MyAssembly_{genotype}/2_raw_reads_fastqc_reports/{sample}_2_fastqc.zip"
 	threads: 1
 	resources: 
+		load = 1,
 		mem_free=1
 	params:
 		genotype="{genotype}",
@@ -91,11 +100,96 @@ rule fastqc:
 		"{fastqc} -f fastq {input.R1} -o MyAssembly_{params.genotype}/2_raw_reads_fastqc_reports 2> {log};"
 		"{fastqc} -f fastq {input.R2} -o MyAssembly_{params.genotype}/2_raw_reads_fastqc_reports 2> {log}"
 
+rule salmon_index:
+	"""
+	Gera um index do salmon para a quantificacao das leituras trimmadas.
+	"""
+	priority: 1
+	input:
+		transcriptome = reference_transcriptome
+	output:
+		salmon_index="/Storage/data1/riano/Sugarcane/Pantranscriptome/Assemblies/CD-HIT_48_genotypes_transcriptome_salmonInx/"
+	params:
+		server="figsrv"
+	resources:
+		load=1
+	threads: 1
+#	log:
+#		"MyAssembly_{genotype}/logs/salmon/index/salmon_index.log"
+	name: "salmon_index"
+	shell:
+		"""
+		/usr/bin/time -v {salmon} index -t {input.transcriptome} -p {threads} -i {output.salmon_index} > {log} 2>&1
+		"""
+
+rule salmon_quant:
+	"""
+	Quantifica as leituras trimmadas contra o indice do salmon criado anteriormente
+	"""
+	priority: 1
+	input:
+		salmon_index="/Storage/data1/riano/Sugarcane/Pantranscriptome/Assemblies/CD-HIT_48_genotypes_transcriptome_salmonInx/",
+                R1 = "MyAssembly_{genotype}/1_raw_reads_in_fastq_format/{sample}_1.fastq",
+                R2 = "MyAssembly_{genotype}/1_raw_reads_in_fastq_format/{sample}_2.fastq"
+	output:
+		"MyAssembly_{genotype}/3_salmon/quant/{sample}/aux_info/meta_info.json",
+		"MyAssembly_{genotype}/3_salmon/quant/{sample}/quant.sf"
+	params:
+		server="figsrv",
+		genotype="{genotype}"	
+	resources:
+		load=6
+	threads: 6
+	log:
+		"datasets_{genotype}/logs/salmon/quant/{sample}.log"
+	name: "salmon_quant"
+	shell:
+		"""
+		/usr/bin/time -v {salmon} quant -p {threads} -i {input.salmon_index} -l A -1 {input.R1} -2 {input.R2} -o datasets_{params.genotype}/3_salmon/quant/{wildcards.sample} > {log} 2>&1
+		"""
+
+rule filter_stranded:
+	"""
+	Filtra leituras stranded e pareadas (ISR) apos quantificacao
+	"""
+	priority: 1
+	input:
+		meta_info = expand("MyAssembly_{genotype}/3_salmon/quant/{sample}/aux_info/meta_info.json", genotype=GENOTYPE, sample=samples),
+	output:
+		filtered_samples = "MyAssembly_{genotype}/3_salmon/quant/{genotype}_srrlist.csv"
+	threads: 1
+	resources:
+		load=1
+	params:
+		genotype="{genotype}",
+		server="figsrv"
+	log:
+		"MyAssembly_{genotype}/logs/filter_stranded/{genotype}.log"
+	name: "filter_stranded"
+	shell:
+		"""
+		{jq} -r '.library_types[]' {input.meta_info} > MyAssembly_{params.genotype}/3_salmon/quant/lib.txt 2>> {log}
+		ls MyAssembly_{wildcards.genotype}/3_salmon/quant/ | grep -E "(SRR|ERR)" > MyAssembly_{params.genotype}/3_salmon/quant/id.txt 2>> {log}
+		paste MyAssembly_{params.genotype}/3_salmon/quant/id.txt MyAssembly_{params.genotype}/3_salmon/quant/lib.txt -d, > MyAssembly_{params.genotype}/3_salmon/quant/stranded_status.csv 2>> {log}
+		grep .S MyAssembly_{params.genotype}/3_salmon/quant/stranded_status.csv > MyAssembly_{params.genotype}/3_salmon/quant/stranded_samples.csv 2>> {log}
+		cut -f1 -d, MyAssembly_{params.genotype}/3_salmon/quant/stranded_samples.csv | paste -s -d, > MyAssembly_{params.genotype}/3_salmon/quant/{params.genotype}_srrlist.csv 2>> {log}
+		"""
+
+def get_filter_stranded_samples(wildcards):
+	#this file is created by filter_stranded (rule above)
+	try:
+		with open(f"MyAssembly_{wildcards.genotype}/3_salmon/quant/{wildcards.genotype}_srrlist.csv", "r") as f1:
+			stranded_samples = pd.read_csv(f1)
+		return stranded_samples
+	except EmptyDataError:
+		print("Empty file - {f1}")
+
 rule bbduk:
 	input:
-		"MyAssembly_{genotype}/2_raw_reads_fastqc_reports/{sample}_1_fastqc.html",
+		fastq_raw = "MyAssembly_{genotype}/2_raw_reads_fastqc_reports/{sample}_1_fastqc.html",
 		R1 = "MyAssembly_{genotype}/1_raw_reads_in_fastq_format/{sample}_1.fastq",
-		R2 = "MyAssembly_{genotype}/1_raw_reads_in_fastq_format/{sample}_2.fastq"
+		R2 = "MyAssembly_{genotype}/1_raw_reads_in_fastq_format/{sample}_2.fastq",
+		new_srrlist = "MyAssembly_{genotype}/3_salmon/quant/{genotype}_srrlist.csv"
 	output:
 		R1 = "MyAssembly_{genotype}/3_trimmed_reads/{sample}.trimmed.R1.fastq",
 		R2 = "MyAssembly_{genotype}/3_trimmed_reads/{sample}.trimmed.R2.fastq",
@@ -247,7 +341,6 @@ filtered_total_R2 = expand("MyAssembly_{{genotype}}/6_contamination_removal/{sam
 unclassified_total_R1 = expand("MyAssembly_{{genotype}}/6_contamination_removal/{sample}.trimmed.unclassified.total.R1.fastq", sample=samples)
 unclassified_total_R2 = expand("MyAssembly_{{genotype}}/6_contamination_removal/{sample}.trimmed.unclassified.total.R2.fastq", sample=samples)
 
-'''
 rule trinity:
 	input:
 		filtered_total_R1 = expand("MyAssembly_{{genotype}}/6_contamination_removal/{sample}.trimmed.filtered.total.R1.fastq", sample=samples),
@@ -307,7 +400,6 @@ rule extract_contiglenght_301:
 		"MyAssembly_{genotype}/logs/extract_contigs/{genotype}.log"
 	shell:
 		"{extract_contigs} -f {input.transcriptome} -m 301 2> {log}"
-'''
 
 rule busco:
 	input:
@@ -339,7 +431,8 @@ rule transrate:
 		"MyAssembly_{genotype}/logs/transrate/{genotype}.log"
 	shell:
 		"/usr/bin/time -v {transrate} --assembly {input.transcriptome} --reference {input.ref} --threads {threads} --output {output.transrate} 2> {log}"
-rule salmon_index:
+
+rule salmon_index_quant:
 	input:
 		transcriptome="MyAssembly_{genotype}/7_trinity_assembly/MyAssembly_{genotype}_trinity_k25_and_k31.Trinity.merged.final_gt301bp.fasta"
 	output:
@@ -354,7 +447,7 @@ rule salmon_index:
 	shell:
 		"/usr/bin/time -v {salmon} index -t {input.transcriptome} -p {threads} -i {output.salmon_index} --gencode 2> {log}"
 
-rule salmon_quant:
+rule salmon_quant_transcriptome:
 	input:
 		salmon_index = "MyAssembly_{genotype}/10_salmon/index/",
 		filtered_R1 = expand("MyAssembly_{{genotype}}/6_contamination_removal/{sample}.trimmed.filtered.total.R1.fastq", sample=samples),
