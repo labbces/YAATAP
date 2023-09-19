@@ -79,6 +79,9 @@ rule download_fastq:
 		"""
 
 rule fastqc:
+        """
+        Gera um relatorio FastQC com a qualidade das leituras 1 e 2 das amostras do genotipo {params.genotype}.
+        """
 	input:
                 R1 = "MyAssembly_{genotype}/1_raw_reads_in_fastq_format/{sample}_1.fastq",
                 R2 = "MyAssembly_{genotype}/1_raw_reads_in_fastq_format/{sample}_2.fastq" 
@@ -102,7 +105,7 @@ rule fastqc:
 
 rule salmon_index:
 	"""
-	Gera um index do salmon para a quantificacao das leituras trimmadas.
+	Gera um index do salmon para a quantificacao das leituras cruas.
 	"""
 	priority: 1
 	input:
@@ -124,7 +127,7 @@ rule salmon_index:
 
 rule salmon_quant:
 	"""
-	Quantifica as leituras trimmadas contra o indice do salmon criado anteriormente
+	Quantifica as leituras cruas contra o indice do salmon do pan-transcriptoma (CD-HIT 100%).
 	"""
 	priority: 1
 	input:
@@ -150,7 +153,7 @@ rule salmon_quant:
 
 rule filter_stranded:
 	"""
-	Filtra leituras stranded e pareadas (ISR) apos quantificacao
+	Filtra leituras stranded e pareadas (ISR) apos quantificacao no pan-transcriptoma.
 	"""
 	priority: 1
 	input:
@@ -185,6 +188,12 @@ def get_filter_stranded_samples(wildcards):
 		print("Empty file - {f1}")
 
 rule bbduk:
+	"""
+	Se as leituras cruas forem stranded e pareadas (resultado do filtro anterior):
+	- Remove os adaptadores de sequenciamento com illumina (adapters.fa) dos arquivos brutos (fastq.gz);
+	- Remove sequencias de RNA ribossomal (rRNA) dos arquivos brutos (fastq.gz);
+	- Filtra sequencias por minlength=75 e qualidade < Q20.
+	"""
 	input:
 		fastq_raw = "MyAssembly_{genotype}/2_raw_reads_fastqc_reports/{sample}_1_fastqc.html",
 		R1 = "MyAssembly_{genotype}/1_raw_reads_in_fastq_format/{sample}_1.fastq",
@@ -218,6 +227,9 @@ rule bbduk:
 		"minlength=75 qtrim=w trimq=20 tpe tbo 2> {log}"
 
 rule fastqc_after_bbduk:
+        """
+        Gera um relatorio FastQC com a qualidade das leituras trimadas 1 e 2 das amostras do genotipo {params.genotype}.
+        """
 	input:
 		R1 = "MyAssembly_{genotype}/3_trimmed_reads/{sample}.trimmed.R1.fastq",
 		R2 = "MyAssembly_{genotype}/3_trimmed_reads/{sample}.trimmed.R2.fastq"
@@ -239,6 +251,9 @@ rule fastqc_after_bbduk:
 		"{fastqc} -f fastq {input.R2} -o MyAssembly_{params.genotype}/4_trimmed_reads_fastqc_reports 2> {log}"
 
 rule kraken:
+        """
+        Gera o relatorio do Kraken2 com a taxonomia de todas as sequencias baseado no banco de dados: /Storage/data1/felipe.peres/kraken2/completeDB
+        """
 	input:
 		"MyAssembly_{genotype}/4_trimmed_reads_fastqc_reports/{sample}.trimmed.R1_fastqc.html",
 		R1 = "MyAssembly_{genotype}/3_trimmed_reads/{sample}.trimmed.R1.fastq",
@@ -257,6 +272,10 @@ rule kraken:
 		"--threads {threads} --report-zero-counts --confidence 0.05 --output {output} --paired {input.R1} {input.R2} 2> {log}"
 
 rule split_kraken_output:
+        """
+        Splita o relatorio do Kraken2 em X partes (parts.csv).
+	- Etapa necessaria para utilizar menos RAM.
+        """
 	input:
 		"MyAssembly_{genotype}/5_trimmed_reads_kraken_reports/{sample}.trimmed.kraken"
 	output:
@@ -274,6 +293,9 @@ rule split_kraken_output:
 		"split --number=l/10 -d --additional-suffix=.kraken {input} MyAssembly_{params.genotype}/5_trimmed_reads_kraken_reports/parts/{params.identificator}.trimmed_ 2> {log}"
 
 rule create_index_contfree_ngs:
+        """
+        Gera um index para as sequencias antes de rodar o ContFree-NGS.
+        """
 	input: 
 		R1 = "MyAssembly_{genotype}/3_trimmed_reads/{sample}.trimmed.R1.fastq",
 		R2 = "MyAssembly_{genotype}/3_trimmed_reads/{sample}.trimmed.R2.fastq"
@@ -292,6 +314,9 @@ rule create_index_contfree_ngs:
 		"{create_index} -R1 {input.R1} -R2 {input.R2} -o MyAssembly_{params.genotype}/6_contamination_removal/index/ 2> {log}"
 
 rule contfree_ngs:
+        """
+        Executa o ContFree-NGS para remover leituras que nao estao no taxon Viridiplantae.
+        """
 	input:
 		R1 = "MyAssembly_{genotype}/6_contamination_removal/index/{sample}.trimmed.R1.index",
 		R2 = "MyAssembly_{genotype}/6_contamination_removal/index/{sample}.trimmed.R2.index",
@@ -313,6 +338,9 @@ rule contfree_ngs:
 		"python3.8 {contfree_ngs} --taxonomy {input.kraken_file} --s p --R1 {input.R1} --R2 {input.R2} --taxon Viridiplantae -o MyAssembly_{params.genotype}/6_contamination_removal/parts/ 2> {log};"
 
 rule merge:
+        """
+        Concatena todas as leituras 'unclassified' e 'filtered' geradas pelo ContFree-NGS.
+        """
 	input:
 		filtered_parts_R1 = expand("MyAssembly_{{genotype}}/6_contamination_removal/parts/{part}.{{sample}}.trimmed.filtered.R1.fastq", part=parts),
 		filtered_parts_R2 = expand("MyAssembly_{{genotype}}/6_contamination_removal/parts/{part}.{{sample}}.trimmed.filtered.R2.fastq", part=parts),
@@ -342,6 +370,9 @@ unclassified_total_R1 = expand("MyAssembly_{{genotype}}/6_contamination_removal/
 unclassified_total_R2 = expand("MyAssembly_{{genotype}}/6_contamination_removal/{sample}.trimmed.unclassified.total.R2.fastq", sample=samples)
 
 rule trinity:
+        """
+        Executa o Trinity para montar transcriptomas com dois valores de k-mer (k = 25 e k = 31).
+        """
 	input:
 		filtered_total_R1 = expand("MyAssembly_{{genotype}}/6_contamination_removal/{sample}.trimmed.filtered.total.R1.fastq", sample=samples),
 		filtered_total_R2 = expand("MyAssembly_{{genotype}}/6_contamination_removal/{sample}.trimmed.filtered.total.R2.fastq", sample=samples),
@@ -368,6 +399,9 @@ rule trinity:
 		"/usr/bin/time -v {trinity} --seqType fq --left {params.filtered_total_R1},{params.unclassified_total_R1} --right {params.filtered_total_R2},{params.unclassified_total_R2} --SS_lib_type RF --max_memory 10G --min_contig_length 200 --CPU {threads} --output 7_trinity_assembly/MyAssembly_{params.genotype}_trinity_k25 --full_cleanup --no_normalize_reads --KMER_SIZE 31 2> {log.k31}"
 
 rule cd_hit_est:
+        """
+        Concatena os dois transcriptomas montados pelo Trinity (k = 25 e k = 31).
+        """
 	input: 
 		k25 = "MyAssembly_{genotype}/7_trinity_assembly/MyAssembly_{genotype}_trinity_k25.Trinity.fasta",
 		k31 = "MyAssembly_{genotype}/7_trinity_assembly/MyAssembly_{genotype}_trinity_k31.Trinity.fasta"
@@ -389,6 +423,9 @@ rule cd_hit_est:
 		"/usr/bin/time -v {cd_hit_est} -i {output.merged_mod} -o {output.final_cd_hit_est} -c 1 -n 11 -T {threads} -M 0 -d 0 -r 0 -g 1"
 
 rule extract_contiglenght_301:
+        """
+        Extrai contigs com tamanho minimo = 301 do transcriptoma concatenado (k = 25 e k = 31).
+        """
 	input:
 		transcriptome = "MyAssembly_{genotype}/7_trinity_assembly/MyAssembly_{genotype}_trinity_k25_and_k31.Trinity.merged.final.fasta"
 	output: 
@@ -402,6 +439,9 @@ rule extract_contiglenght_301:
 		"{extract_contigs} -f {input.transcriptome} -m 301 2> {log}"
 
 rule busco:
+        """
+        Avaliacao de qualidade do transcriptoma com BUSCO (banco embryophyta como referencia).
+        """
 	input:
 		transcriptome="MyAssembly_{genotype}/7_trinity_assembly/MyAssembly_{genotype}_trinity_k25_and_k31.Trinity.merged.final_gt301bp.fasta"
 	output:
@@ -417,6 +457,9 @@ rule busco:
 		"/usr/bin/time -v run_BUSCO.py -i {input.transcriptome} -o {output.busco} -c {threads} -m transcriptome -l /Storage/databases/BUSCO_DBs/embryophyta_odb9/ 2> {log}"		
 
 rule transrate:
+        """
+        Avaliacao de qualidade do transcriptoma com TRANSRATE (utilizando o transcriptoma de Sorghum bicolor como referencia).
+        """
 	input:
 		transcriptome="MyAssembly_{genotype}/7_trinity_assembly/MyAssembly_{genotype}_trinity_k25_and_k31.Trinity.merged.final_gt301bp.fasta",
 		ref="Sbicolor_454_v3.1.1.transcript.fa"
@@ -433,6 +476,10 @@ rule transrate:
 		"/usr/bin/time -v {transrate} --assembly {input.transcriptome} --reference {input.ref} --threads {threads} --output {output.transrate} 2> {log}"
 
 rule salmon_index_quant:
+        """
+        Avaliacao de qualidade do transcriptoma com Salmon:
+	- Gera um salmon index para o transcriptoma concatenado.
+        """
 	input:
 		transcriptome="MyAssembly_{genotype}/7_trinity_assembly/MyAssembly_{genotype}_trinity_k25_and_k31.Trinity.merged.final_gt301bp.fasta"
 	output:
@@ -448,6 +495,10 @@ rule salmon_index_quant:
 		"/usr/bin/time -v {salmon} index -t {input.transcriptome} -p {threads} -i {output.salmon_index} --gencode 2> {log}"
 
 rule salmon_quant_transcriptome:
+        """
+        Avaliacao de qualidade do transcriptoma com Salmon:
+        - Quantificacao das leituras trimadas no transcriptoma concatenado.
+        """
 	input:
 		salmon_index = "MyAssembly_{genotype}/10_salmon/index/",
 		filtered_R1 = expand("MyAssembly_{{genotype}}/6_contamination_removal/{sample}.trimmed.filtered.total.R1.fastq", sample=samples),
