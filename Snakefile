@@ -312,7 +312,7 @@ rule create_index_contfree_ngs:
 		load=1
 	params:
 		genotype="{genotype}",
-		server="bcmsrv"
+		server="figsrv"
 	log:
 		"MyAssembly_{genotype}/logs/create_index/{sample}.log"
 	shell:
@@ -337,7 +337,7 @@ rule contfree_ngs:
 		load=1
 	params:
 		genotype="{genotype}",
-		server="bcmsrv"
+		server="figsrv"
 	log:
 		"MyAssembly_{genotype}/logs/contfree_ngs/{sample}.{part}.log"
 	shell:
