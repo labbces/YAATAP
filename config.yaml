@@ -2,7 +2,7 @@ default-resources: [mem_free=1]
 
 software:
         ffq: ~/.conda/envs/snakemake-tutorial/envs/snakemake_conekt/bin/ffq
-        jq: ./jq-linux64
+        jq: software/jq-linux64
         fastqc: /Storage/progs/FastQC/fastqc
         bbduk: /Storage/progs/bbmap_35.85/bbduk2.sh
         kraken2: /Storage/progs/miniconda2/bin/kraken2
