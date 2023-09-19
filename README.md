@@ -4,6 +4,7 @@ yetAnotherAutoTranscriptAssemblyPipeline
 ### Requirements
 
 * ffq v0.2.1
+* jq-linux64 jq-1.6
 * FastQC v0.11.8
 * BBDuk v35.85
 * Kraken2 v2.1.2
