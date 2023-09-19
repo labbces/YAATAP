@@ -85,6 +85,7 @@ rule fastqc:
 	input:
                 R1 = "MyAssembly_{genotype}/1_raw_reads_in_fastq_format/{sample}_1.fastq",
                 R2 = "MyAssembly_{genotype}/1_raw_reads_in_fastq_format/{sample}_2.fastq" 
+        priority: 1
 	output:
 		html_1= "MyAssembly_{genotype}/2_raw_reads_fastqc_reports/{sample}_1_fastqc.html",
 		zip_1 = "MyAssembly_{genotype}/2_raw_reads_fastqc_reports/{sample}_1_fastqc.zip",
@@ -92,8 +93,7 @@ rule fastqc:
                 zip_2 = "MyAssembly_{genotype}/2_raw_reads_fastqc_reports/{sample}_2_fastqc.zip"
 	threads: 1
 	resources: 
-		load = 1,
-		mem_free=1
+		load = 1
 	params:
 		genotype="{genotype}",
 		server="figsrv"
@@ -199,6 +199,7 @@ rule bbduk:
 		R1 = "MyAssembly_{genotype}/1_raw_reads_in_fastq_format/{sample}_1.fastq",
 		R2 = "MyAssembly_{genotype}/1_raw_reads_in_fastq_format/{sample}_2.fastq",
 		new_srrlist = "MyAssembly_{genotype}/3_salmon/quant/{genotype}_srrlist.csv"
+        priority: 1
 	output:
 		R1 = "MyAssembly_{genotype}/3_trimmed_reads/{sample}.trimmed.R1.fastq",
 		R2 = "MyAssembly_{genotype}/3_trimmed_reads/{sample}.trimmed.R2.fastq",
@@ -208,7 +209,7 @@ rule bbduk:
 		"MyAssembly_{genotype}/logs/bbduk/{sample}.log"
 	threads: 4
 	resources:
-		mem_free=1
+		load=5
 	params:
 		server="figsrv"
 	shell:
@@ -233,6 +234,7 @@ rule fastqc_after_bbduk:
 	input:
 		R1 = "MyAssembly_{genotype}/3_trimmed_reads/{sample}.trimmed.R1.fastq",
 		R2 = "MyAssembly_{genotype}/3_trimmed_reads/{sample}.trimmed.R2.fastq"
+        priority: 1
 	output:
 		html_1= "MyAssembly_{genotype}/4_trimmed_reads_fastqc_reports/{sample}.trimmed.R1_fastqc.html",
 		zip_1 = "MyAssembly_{genotype}/4_trimmed_reads_fastqc_reports/{sample}.trimmed.R1_fastqc.zip",
@@ -240,7 +242,7 @@ rule fastqc_after_bbduk:
 		zip_2 = "MyAssembly_{genotype}/4_trimmed_reads_fastqc_reports/{sample}.trimmed.R2_fastqc.zip"
 	threads: 1
 	resources:
-		mem_free=1
+		load=1
 	params:
 		genotype="{genotype}",
 		server="figsrv"
@@ -258,11 +260,12 @@ rule kraken:
 		"MyAssembly_{genotype}/4_trimmed_reads_fastqc_reports/{sample}.trimmed.R1_fastqc.html",
 		R1 = "MyAssembly_{genotype}/3_trimmed_reads/{sample}.trimmed.R1.fastq",
 		R2 = "MyAssembly_{genotype}/3_trimmed_reads/{sample}.trimmed.R2.fastq"
+        priority: 1
 	output:
 		"MyAssembly_{genotype}/5_trimmed_reads_kraken_reports/{sample}.trimmed.kraken"
 	threads: 10
 	resources:
-		mem_free=255
+		load=10
 	params:
 		server="figsrv"
 	log:
@@ -278,6 +281,7 @@ rule split_kraken_output:
         """
 	input:
 		"MyAssembly_{genotype}/5_trimmed_reads_kraken_reports/{sample}.trimmed.kraken"
+        priority: 1
 	output:
 		expand("MyAssembly_{{genotype}}/5_trimmed_reads_kraken_reports/parts/{{sample}}.trimmed_{part}.kraken", part=parts)
 	params:
@@ -286,7 +290,7 @@ rule split_kraken_output:
 		server = "figsrv"
 	threads: 1
 	resources: 
-		mem_free=1
+		load=1
 	log:
 		"MyAssembly_{genotype}/logs/split_kraken_output/{sample}.log"
 	shell:
@@ -299,12 +303,13 @@ rule create_index_contfree_ngs:
 	input: 
 		R1 = "MyAssembly_{genotype}/3_trimmed_reads/{sample}.trimmed.R1.fastq",
 		R2 = "MyAssembly_{genotype}/3_trimmed_reads/{sample}.trimmed.R2.fastq"
+        priority: 1
 	output:
 		R1 = "MyAssembly_{genotype}/6_contamination_removal/index/{sample}.trimmed.R1.index",
 		R2 = "MyAssembly_{genotype}/6_contamination_removal/index/{sample}.trimmed.R2.index"
 	threads: 1
 	resources:
-		mem_free=1
+		load=1
 	params:
 		genotype="{genotype}",
 		server="bcmsrv"
@@ -321,6 +326,7 @@ rule contfree_ngs:
 		R1 = "MyAssembly_{genotype}/6_contamination_removal/index/{sample}.trimmed.R1.index",
 		R2 = "MyAssembly_{genotype}/6_contamination_removal/index/{sample}.trimmed.R2.index",
 		kraken_file = "MyAssembly_{genotype}/5_trimmed_reads_kraken_reports/parts/{sample}.trimmed_{part}.kraken"
+        priority: 1
 	output: 
 		filtered_parts_R1 = "MyAssembly_{genotype}/6_contamination_removal/parts/{part}.{sample}.trimmed.filtered.R1.fastq", 
 		filtered_parts_R2 = "MyAssembly_{genotype}/6_contamination_removal/parts/{part}.{sample}.trimmed.filtered.R2.fastq", 
@@ -328,7 +334,7 @@ rule contfree_ngs:
 		unclassified_parts_R2 = "MyAssembly_{genotype}/6_contamination_removal/parts/{part}.{sample}.trimmed.unclassified.R2.fastq"
 	threads: 1
 	resources: 
-		mem_free=1
+		load=1
 	params:
 		genotype="{genotype}",
 		server="bcmsrv"
@@ -346,6 +352,7 @@ rule merge:
 		filtered_parts_R2 = expand("MyAssembly_{{genotype}}/6_contamination_removal/parts/{part}.{{sample}}.trimmed.filtered.R2.fastq", part=parts),
 		unclassified_parts_R1 = expand("MyAssembly_{{genotype}}/6_contamination_removal/parts/{part}.{{sample}}.trimmed.unclassified.R1.fastq", part=parts),
 		unclassified_parts_R2 = expand("MyAssembly_{{genotype}}/6_contamination_removal/parts/{part}.{{sample}}.trimmed.unclassified.R2.fastq", part=parts)
+        priority: 1
 	output:
 		filtered_total_R1 = "MyAssembly_{genotype}/6_contamination_removal/{sample}.trimmed.filtered.total.R1.fastq",
 		filtered_total_R2 = "MyAssembly_{genotype}/6_contamination_removal/{sample}.trimmed.filtered.total.R2.fastq",
@@ -353,7 +360,7 @@ rule merge:
 		unclassified_total_R2 = "MyAssembly_{genotype}/6_contamination_removal/{sample}.trimmed.unclassified.total.R2.fastq"
 	threads: 1
 	resources:
-		mem_free=1
+		load=1
 	params:
 		server="figsrv"
 	log:
@@ -378,6 +385,7 @@ rule trinity:
 		filtered_total_R2 = expand("MyAssembly_{{genotype}}/6_contamination_removal/{sample}.trimmed.filtered.total.R2.fastq", sample=samples),
 		unclassified_total_R1 = expand("MyAssembly_{{genotype}}/6_contamination_removal/{sample}.trimmed.unclassified.total.R1.fastq", sample=samples),
 		unclassified_total_R2 = expand("MyAssembly_{{genotype}}/6_contamination_removal/{sample}.trimmed.unclassified.total.R2.fastq", sample=samples) 
+        priority: 1
 	output: 
 		k25 = "MyAssembly_{genotype}/7_trinity_assembly/MyAssembly_{genotype}_trinity_k25.Trinity.fasta",
 		k31 = "MyAssembly_{genotype}/7_trinity_assembly/MyAssembly_{genotype}_trinity_k31.Trinity.fasta"
@@ -389,7 +397,7 @@ rule trinity:
 		server="figsrv",
 		genotype="{genotype}"
 	resources: 
-		mem_free=100
+		load=10
 	threads: 10
 	log:
 		k25 = "MyAssembly_{genotype}/logs/trinity/{genotype}.k25.log",
@@ -405,6 +413,7 @@ rule cd_hit_est:
 	input: 
 		k25 = "MyAssembly_{genotype}/7_trinity_assembly/MyAssembly_{genotype}_trinity_k25.Trinity.fasta",
 		k31 = "MyAssembly_{genotype}/7_trinity_assembly/MyAssembly_{genotype}_trinity_k31.Trinity.fasta"
+        priority: 1
 	output:
 		mod_k25 = "MyAssembly_{genotype}/7_trinity_assembly/MyAssembly_{genotype}_trinity_k25.Trinity.mod.fasta",
 		mod_k31 = "MyAssembly_{genotype}/7_trinity_assembly/MyAssembly_{genotype}_trinity_k31.Trinity.mod.fasta",
@@ -413,6 +422,8 @@ rule cd_hit_est:
 	params:
 		genotype="{genotype}",
 		server="figsrv"
+	resources:
+		load=1
 	threads: 1
 	log:
 		"MyAssembly_{genotype}/logs/cd_hit_est_transcriptomes/{genotype}.log"
@@ -428,10 +439,13 @@ rule extract_contiglenght_301:
         """
 	input:
 		transcriptome = "MyAssembly_{genotype}/7_trinity_assembly/MyAssembly_{genotype}_trinity_k25_and_k31.Trinity.merged.final.fasta"
+        priority: 1
 	output: 
 		"MyAssembly_{genotype}_trinity_k25_and_k31.Trinity.merged.final_gt301bp.fasta"
 	params:
 		server="figsrv"
+	resources:
+		load=1
 	threads: 1
 	log: 
 		"MyAssembly_{genotype}/logs/extract_contigs/{genotype}.log"
@@ -444,12 +458,13 @@ rule busco:
         """
 	input:
 		transcriptome="MyAssembly_{genotype}/7_trinity_assembly/MyAssembly_{genotype}_trinity_k25_and_k31.Trinity.merged.final_gt301bp.fasta"
+        priority: 1
 	output:
 		busco="MyAssembly_{genotype}_k25andk31_busco"
 	params:
 		server="figsrv"
 	resources:
-		mem_free=1
+		load=4
 	threads: 2
 	log:
 		"MyAssembly_{genotype}/logs/busco/{genotype}.log"
@@ -463,12 +478,13 @@ rule transrate:
 	input:
 		transcriptome="MyAssembly_{genotype}/7_trinity_assembly/MyAssembly_{genotype}_trinity_k25_and_k31.Trinity.merged.final_gt301bp.fasta",
 		ref="Sbicolor_454_v3.1.1.transcript.fa"
+        priority: 1
 	output:
 		transrate=directory("MyAssembly_{genotype}/9_transrate/transrate_comparative_Shorgum_vs_{genotype}")
 	params:
 		server="figsrv"
 	resources:
-		mem_free=1
+		load=4
 	threads: 2
 	log:
 		"MyAssembly_{genotype}/logs/transrate/{genotype}.log"
@@ -482,12 +498,13 @@ rule salmon_index_quant:
         """
 	input:
 		transcriptome="MyAssembly_{genotype}/7_trinity_assembly/MyAssembly_{genotype}_trinity_k25_and_k31.Trinity.merged.final_gt301bp.fasta"
+        priority: 1
 	output:
 		salmon_index=directory("MyAssembly_{genotype}/10_salmon/index/")
 	params:
 		server="figsrv"
 	resources:
-		mem_free=1
+		load=1
 	threads: 2
 	log:
 		"MyAssembly_{genotype}/logs/salmon_index/{genotype}.log"
@@ -505,6 +522,7 @@ rule salmon_quant_transcriptome:
                 filtered_R2 = expand("MyAssembly_{{genotype}}/6_contamination_removal/{sample}.trimmed.filtered.total.R2.fastq", sample=samples),
                 unclassified_R1 = expand("MyAssembly_{{genotype}}/6_contamination_removal/{sample}.trimmed.unclassified.total.R1.fastq", sample=samples),
                 unclassified_R2 = expand("MyAssembly_{{genotype}}/6_contamination_removal/{sample}.trimmed.unclassified.total.R2.fastq", sample=samples)
+        priority: 1
 	output:
 		salmon_quant=directory("MyAssembly_{genotype}/10_salmon/quant/")
 	params:
@@ -514,7 +532,7 @@ rule salmon_quant_transcriptome:
 		unclassified_total_R1=' '.join(unclassified_total_R1),
 		unclassified_total_R2=' '.join(unclassified_total_R2)
 	resources:
-		mem_free=1
+		load=1
 	threads: 2
 	log: 
 		"MyAssembly_{genotype}/logs/salmon_quant/{genotype}.log"
