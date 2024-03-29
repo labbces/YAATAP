@@ -1,6 +1,7 @@
 default-resources: [mem_free=1]
 
 software:
+        fastq-dump: /Storage/data1/felipe.peres/src/sratoolkit.3.0.10-ubuntu64/bin/fastq-dump
         ffq: ~/.conda/envs/snakemake-tutorial/envs/snakemake_conekt/bin/ffq
         jq: software/jq-linux64
         fastqc: /Storage/progs/FastQC/fastqc
