@@ -165,11 +165,11 @@ rule salmon_quant:
 		load=6
 	threads: 6
 	log:
-		"datasets_{genotype}/logs/salmon/quant/{sample}.log"
+		"MyAssembly_{genotype}/logs/salmon/quant/{sample}.log"
 	name: "salmon_quant"
 	shell:
 		"""
-		/usr/bin/time -v {salmon} quant -p {threads} -i {input.salmon_index} -l A -1 {input.R1} -2 {input.R2} -o datasets_{params.genotype}/3_salmon/quant/{wildcards.sample} > {log} 2>&1
+		/usr/bin/time -v {salmon} quant -p {threads} -i {input.salmon_index} -l A -1 {input.R1} -2 {input.R2} -o MyAssembly_{params.genotype}/3_salmon/quant/{wildcards.sample} > {log} 2>&1
 		"""
 
 rule filter_stranded:
