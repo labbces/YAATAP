@@ -1,6 +1,20 @@
 # YAATAP
 yetAnotherAutoTranscriptAssemblyPipeline
 
+### Installing and running
+
+```bash
+# install mamba
+conda install -n base -c conda-forge mamba
+
+# install snakemake
+mamba create -c conda-forge -c bioconda -n YAATAP snakemake
+
+# dry-run YAATAP
+conda activate YAATAP
+snakemake -np
+```
+
 ### Requirements
 
 * ffq v0.2.1
