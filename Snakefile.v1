@@ -14,18 +14,20 @@ import os
 sample_file = [file for file in os.listdir() if file.endswith('_samples.csv')][0]
 
 # extraindo o genotipo do nome do arquivo "_samples.csv"
+# o arquivo deve se chamar {genotipo}_samples.csv, por exemplo: Q200_samples.csv
 GENOTYPE = os.path.splitext(sample_file)[0].replace('_samples', '')
 
 # extraindo samples separadas por virgula
 samples = pd.read_csv(GENOTYPE+'_samples.csv')
 
-# reference transcriptome
+# definir transcriptoma de referencia - pan-transcriptoma da cana-de-acucar
 reference_transcriptome = "/Storage/data1/riano/Sugarcane/Pantranscriptome/Assemblies/CD-HIT_48_genotypes_transcriptome_salmonInx/"
 
-# split kraken in parts
+# dividir o output do kraken em X partes - definidas pelo conteudo do arquivo parts.csv
+# por exemplo - dividir em 5 partes: 00,01,02,03,04
 parts = pd.read_csv("parts.csv")
 
-#Software executable
+# software executable
 fastq_dump = config["software"]["fastq-dump"]
 ffq = config["software"]["ffq"]
 jq = config["software"]["jq"]
@@ -55,7 +57,7 @@ rule all:
 '''
 rule download_fastq:
 	"""
-	Baixa os arquivos brutos (fastq.gz) das leituras 1 e 2 das amostras do genotipo {params.genotype}.
+	Baixa os arquivos brutos (fastq) das leituras 1 e 2 das amostras do genotipo {params.genotype}.
 	"""
 	priority: 1
 	output:
@@ -82,7 +84,7 @@ rule download_fastq:
 
 rule download_fastq:
 	"""
-	Baixa os arquivos brutos (fastq.gz) das leituras 1 e 2 das amostras do genotipo {params.genotype}.
+	Baixa os arquivos brutos (fastq) das leituras 1 e 2 das amostras do genotipo {params.genotype}.
 	"""
 	priority: 1
 	output:
@@ -211,8 +213,8 @@ def get_filter_stranded_samples(wildcards):
 rule bbduk:
 	"""
 	Se as leituras cruas forem stranded e pareadas (resultado do filtro anterior):
-	- Remove os adaptadores de sequenciamento com illumina (adapters.fa) dos arquivos brutos (fastq.gz);
-	- Remove sequencias de RNA ribossomal (rRNA) dos arquivos brutos (fastq.gz);
+	- Remove os adaptadores de sequenciamento do illumina (adapters.fa) dos arquivos brutos (fastq);
+	- Remove sequencias de RNA ribossomal (rRNA) dos arquivos brutos (fastq);
 	- Filtra sequencias por minlength=75 e qualidade < Q20.
 	"""
 	input:
@@ -297,7 +299,7 @@ rule kraken:
 
 rule split_kraken_output:
 	"""
-	Splita o relatorio do Kraken2 em X partes (parts.csv).
+	Divide o relatorio do Kraken2 em X partes (parts.csv).
 	- Etapa necessaria para utilizar menos RAM.
 	"""
 	input:
