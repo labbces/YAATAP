@@ -98,7 +98,7 @@ rule download_fastq:
 		R2 = "MyAssembly_{genotype}/1_raw_reads_in_fastq_format/{sample}_2.fastq"
 	threads: 1
 	resources:
-		load=2
+		load=3
 	params:
 		genotype="{genotype}",
 		server="figsrv"
@@ -170,8 +170,8 @@ rule salmon_quant:
 		server="figsrv",
 		genotype="{genotype}"	
 	resources:
-		load=6
-	threads: 6
+		load=10
+	threads: 10
 	log:
 		"MyAssembly_{genotype}/logs/salmon/quant/{sample}.log"
 	name: "salmon_quant"
@@ -236,9 +236,9 @@ rule bbduk:
 		stats = "MyAssembly_{genotype}/4_trimmed_reads/{sample}.trimmed.stats"
 	log:
 		"MyAssembly_{genotype}/logs/bbduk/{sample}.log"
-	threads: 4
+	threads: 3
 	resources:
-		load=5
+		load=3
 	params:
 		server="figsrv"
 	shell:
