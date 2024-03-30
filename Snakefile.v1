@@ -317,7 +317,7 @@ rule split_kraken_output:
 	log:
 		"MyAssembly_{genotype}/logs/split_kraken_output/{sample}.log"
 	shell:
-		"split --number=l/10 -d --additional-suffix=.kraken {input} MyAssembly_{params.genotype}/5_trimmed_reads_kraken_reports/parts/{params.identificator}.trimmed_ 2> {log}"
+		"split --number=l/10 -d --additional-suffix=.kraken {input} MyAssembly_{params.genotype}/6_trimmed_reads_kraken_reports/parts/{params.identificator}.trimmed_ 2> {log}"
 
 rule create_index_contfree_ngs:
 	"""
