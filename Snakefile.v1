@@ -46,10 +46,10 @@ salmon = config["software"]["salmon"]
 rule all:
 	input:
 		#Getting only total parts before run Trinity:
-		expand("MyAssembly_{genotype}/6_contamination_removal/{sample}.trimmed.filtered.total.R1.fastq", genotype=GENOTYPE, sample=samples),
-		expand("MyAssembly_{genotype}/6_contamination_removal/{sample}.trimmed.filtered.total.R2.fastq", genotype=GENOTYPE, sample=samples),
-		expand("MyAssembly_{genotype}/6_contamination_removal/{sample}.trimmed.unclassified.total.R1.fastq", genotype=GENOTYPE, sample=samples),
-		expand("MyAssembly_{genotype}/6_contamination_removal/{sample}.trimmed.unclassified.total.R2.fastq", genotype=GENOTYPE, sample=samples)
+		expand("MyAssembly_{genotype}/7_contamination_removal/{sample}.trimmed.filtered.total.R1.fastq", genotype=GENOTYPE, sample=samples),
+		expand("MyAssembly_{genotype}/7_contamination_removal/{sample}.trimmed.filtered.total.R2.fastq", genotype=GENOTYPE, sample=samples),
+		expand("MyAssembly_{genotype}/7_contamination_removal/{sample}.trimmed.unclassified.total.R1.fastq", genotype=GENOTYPE, sample=samples),
+		expand("MyAssembly_{genotype}/7_contamination_removal/{sample}.trimmed.unclassified.total.R2.fastq", genotype=GENOTYPE, sample=samples)
 		#expand("MyAssembly_{genotype}_k25andk31_busco", genotype=GENOTYPE),
 		#expand("MyAssembly_{genotype}/9_transrate/transrate_comparative_Shorgum_vs_{genotype}", genotype=GENOTYPE),
 		#expand("MyAssembly_{genotype}/10_salmon/quant/", genotype=GENOTYPE)
@@ -224,10 +224,10 @@ rule bbduk:
 		new_srrlist = "MyAssembly_{genotype}/3_salmon/quant/{genotype}_srrlist.csv"
 	priority: 1
 	output:
-		R1 = "MyAssembly_{genotype}/3_trimmed_reads/{sample}.trimmed.R1.fastq",
-		R2 = "MyAssembly_{genotype}/3_trimmed_reads/{sample}.trimmed.R2.fastq",
-		refstats = "MyAssembly_{genotype}/3_trimmed_reads/{sample}.trimmed.refstats",
-		stats = "MyAssembly_{genotype}/3_trimmed_reads/{sample}.trimmed.stats"
+		R1 = "MyAssembly_{genotype}/4_trimmed_reads/{sample}.trimmed.R1.fastq",
+		R2 = "MyAssembly_{genotype}/4_trimmed_reads/{sample}.trimmed.R2.fastq",
+		refstats = "MyAssembly_{genotype}/4_trimmed_reads/{sample}.trimmed.refstats",
+		stats = "MyAssembly_{genotype}/4_trimmed_reads/{sample}.trimmed.stats"
 	log:
 		"MyAssembly_{genotype}/logs/bbduk/{sample}.log"
 	threads: 4
@@ -255,14 +255,14 @@ rule fastqc_after_bbduk:
 	Gera um relatorio FastQC com a qualidade das leituras trimadas 1 e 2 das amostras do genotipo {params.genotype}.
 	"""
 	input:
-		R1 = "MyAssembly_{genotype}/3_trimmed_reads/{sample}.trimmed.R1.fastq",
-		R2 = "MyAssembly_{genotype}/3_trimmed_reads/{sample}.trimmed.R2.fastq"
+		R1 = "MyAssembly_{genotype}/4_trimmed_reads/{sample}.trimmed.R1.fastq",
+		R2 = "MyAssembly_{genotype}/4_trimmed_reads/{sample}.trimmed.R2.fastq"
 	priority: 1
 	output:
-		html_1= "MyAssembly_{genotype}/4_trimmed_reads_fastqc_reports/{sample}.trimmed.R1_fastqc.html",
-		zip_1 = "MyAssembly_{genotype}/4_trimmed_reads_fastqc_reports/{sample}.trimmed.R1_fastqc.zip",
-		html_2= "MyAssembly_{genotype}/4_trimmed_reads_fastqc_reports/{sample}.trimmed.R2_fastqc.html",
-		zip_2 = "MyAssembly_{genotype}/4_trimmed_reads_fastqc_reports/{sample}.trimmed.R2_fastqc.zip"
+		html_1= "MyAssembly_{genotype}/5_trimmed_reads_fastqc_reports/{sample}.trimmed.R1_fastqc.html",
+		zip_1 = "MyAssembly_{genotype}/5_trimmed_reads_fastqc_reports/{sample}.trimmed.R1_fastqc.zip",
+		html_2= "MyAssembly_{genotype}/5_trimmed_reads_fastqc_reports/{sample}.trimmed.R2_fastqc.html",
+		zip_2 = "MyAssembly_{genotype}/5_trimmed_reads_fastqc_reports/{sample}.trimmed.R2_fastqc.zip"
 	threads: 1
 	resources:
 		load=1
@@ -272,20 +272,20 @@ rule fastqc_after_bbduk:
 	log:
 		"MyAssembly_{genotype}/logs/fastqc_after_bbduk/{sample}.log"
 	shell:
-		"{fastqc} -f fastq {input.R1} -o MyAssembly_{params.genotype}/4_trimmed_reads_fastqc_reports 2> {log};"
-		"{fastqc} -f fastq {input.R2} -o MyAssembly_{params.genotype}/4_trimmed_reads_fastqc_reports 2> {log}"
+		"{fastqc} -f fastq {input.R1} -o MyAssembly_{params.genotype}/5_trimmed_reads_fastqc_reports 2> {log};"
+		"{fastqc} -f fastq {input.R2} -o MyAssembly_{params.genotype}/5_trimmed_reads_fastqc_reports 2> {log}"
 
 rule kraken:
 	"""
-	Gera o relatorio do Kraken2 com a taxonomia de todas as sequencias baseado no banco de dados: /Storage/data1/felipe.peres/kraken2/completeDB
+	Gera o relatorio do Kraken2 com a taxonomia de todas as sequencias baseado no banco de dados: /Storage/data1/felipe.peres/Kraken2/krakendb
 	"""
 	input:
-		"MyAssembly_{genotype}/4_trimmed_reads_fastqc_reports/{sample}.trimmed.R1_fastqc.html",
-		R1 = "MyAssembly_{genotype}/3_trimmed_reads/{sample}.trimmed.R1.fastq",
-		R2 = "MyAssembly_{genotype}/3_trimmed_reads/{sample}.trimmed.R2.fastq"
+		"MyAssembly_{genotype}/5_trimmed_reads_fastqc_reports/{sample}.trimmed.R1_fastqc.html",
+		R1 = "MyAssembly_{genotype}/4_trimmed_reads/{sample}.trimmed.R1.fastq",
+		R2 = "MyAssembly_{genotype}/4_trimmed_reads/{sample}.trimmed.R2.fastq"
 	priority: 1
 	output:
-		"MyAssembly_{genotype}/5_trimmed_reads_kraken_reports/{sample}.trimmed.kraken"
+		"MyAssembly_{genotype}/6_trimmed_reads_kraken_reports/{sample}.trimmed.kraken"
 	threads: 10
 	resources:
 		load=10
@@ -294,7 +294,7 @@ rule kraken:
 	log:
 		"MyAssembly_{genotype}/logs/kraken2/{sample}.log"
 	shell:
-		"{kraken2} --db /Storage/data1/felipe.peres/kraken2/completeDB "
+		"{kraken2} --db /Storage/data1/felipe.peres/Kraken2/krakendb "
 		"--threads {threads} --report-zero-counts --confidence 0.05 --output {output} --paired {input.R1} {input.R2} 2> {log}"
 
 rule split_kraken_output:
@@ -303,10 +303,10 @@ rule split_kraken_output:
 	- Etapa necessaria para utilizar menos RAM.
 	"""
 	input:
-		"MyAssembly_{genotype}/5_trimmed_reads_kraken_reports/{sample}.trimmed.kraken"
+		"MyAssembly_{genotype}/6_trimmed_reads_kraken_reports/{sample}.trimmed.kraken"
 	priority: 1
 	output:
-		expand("MyAssembly_{{genotype}}/5_trimmed_reads_kraken_reports/parts/{{sample}}.trimmed_{part}.kraken", part=parts)
+		expand("MyAssembly_{{genotype}}/6_trimmed_reads_kraken_reports/parts/{{sample}}.trimmed_{part}.kraken", part=parts)
 	params:
 		identificator = "{sample}",
 		genotype = "{genotype}",
@@ -324,12 +324,12 @@ rule create_index_contfree_ngs:
 	Gera um index para as sequencias antes de rodar o ContFree-NGS.
 	"""
 	input: 
-		R1 = "MyAssembly_{genotype}/3_trimmed_reads/{sample}.trimmed.R1.fastq",
-		R2 = "MyAssembly_{genotype}/3_trimmed_reads/{sample}.trimmed.R2.fastq"
+		R1 = "MyAssembly_{genotype}/4_trimmed_reads/{sample}.trimmed.R1.fastq",
+		R2 = "MyAssembly_{genotype}/4_trimmed_reads/{sample}.trimmed.R2.fastq"
 	priority: 1
 	output:
-		R1 = "MyAssembly_{genotype}/6_contamination_removal/index/{sample}.trimmed.R1.index",
-		R2 = "MyAssembly_{genotype}/6_contamination_removal/index/{sample}.trimmed.R2.index"
+		R1 = "MyAssembly_{genotype}/7_contamination_removal/index/{sample}.trimmed.R1.index",
+		R2 = "MyAssembly_{genotype}/7_contamination_removal/index/{sample}.trimmed.R2.index"
 	threads: 1
 	resources:
 		load=1
@@ -339,22 +339,22 @@ rule create_index_contfree_ngs:
 	log:
 		"MyAssembly_{genotype}/logs/create_index/{sample}.log"
 	shell:
-		"{create_index} -R1 {input.R1} -R2 {input.R2} -o MyAssembly_{params.genotype}/6_contamination_removal/index/ 2> {log}"
+		"{create_index} -R1 {input.R1} -R2 {input.R2} -o MyAssembly_{params.genotype}/7_contamination_removal/index/ 2> {log}"
 
 rule contfree_ngs:
 	"""
 	Executa o ContFree-NGS para remover leituras que nao estao no taxon Viridiplantae.
 	"""
 	input:
-		R1 = "MyAssembly_{genotype}/6_contamination_removal/index/{sample}.trimmed.R1.index",
-		R2 = "MyAssembly_{genotype}/6_contamination_removal/index/{sample}.trimmed.R2.index",
-		kraken_file = "MyAssembly_{genotype}/5_trimmed_reads_kraken_reports/parts/{sample}.trimmed_{part}.kraken"
+		R1 = "MyAssembly_{genotype}/7_contamination_removal/index/{sample}.trimmed.R1.index",
+		R2 = "MyAssembly_{genotype}/7_contamination_removal/index/{sample}.trimmed.R2.index",
+		kraken_file = "MyAssembly_{genotype}/6_trimmed_reads_kraken_reports/parts/{sample}.trimmed_{part}.kraken"
 	priority: 1
 	output: 
-		filtered_parts_R1 = "MyAssembly_{genotype}/6_contamination_removal/parts/{part}.{sample}.trimmed.filtered.R1.fastq", 
-		filtered_parts_R2 = "MyAssembly_{genotype}/6_contamination_removal/parts/{part}.{sample}.trimmed.filtered.R2.fastq", 
-		unclassified_parts_R1 = "MyAssembly_{genotype}/6_contamination_removal/parts/{part}.{sample}.trimmed.unclassified.R1.fastq",
-		unclassified_parts_R2 = "MyAssembly_{genotype}/6_contamination_removal/parts/{part}.{sample}.trimmed.unclassified.R2.fastq"
+		filtered_parts_R1 = "MyAssembly_{genotype}/7_contamination_removal/parts/{part}.{sample}.trimmed.filtered.R1.fastq", 
+		filtered_parts_R2 = "MyAssembly_{genotype}/7_contamination_removal/parts/{part}.{sample}.trimmed.filtered.R2.fastq", 
+		unclassified_parts_R1 = "MyAssembly_{genotype}/7_contamination_removal/parts/{part}.{sample}.trimmed.unclassified.R1.fastq",
+		unclassified_parts_R2 = "MyAssembly_{genotype}/7_contamination_removal/parts/{part}.{sample}.trimmed.unclassified.R2.fastq"
 	threads: 1
 	resources: 
 		load=1
@@ -364,23 +364,23 @@ rule contfree_ngs:
 	log:
 		"MyAssembly_{genotype}/logs/contfree_ngs/{sample}.{part}.log"
 	shell:
-		"python3.8 {contfree_ngs} --taxonomy {input.kraken_file} --s p --R1 {input.R1} --R2 {input.R2} --taxon Viridiplantae -o MyAssembly_{params.genotype}/6_contamination_removal/parts/ 2> {log};"
+		"python3.8 {contfree_ngs} --taxonomy {input.kraken_file} --s p --R1 {input.R1} --R2 {input.R2} --taxon Viridiplantae -o MyAssembly_{params.genotype}/7_contamination_removal/parts/ 2> {log};"
 
 rule merge:
 	"""
 	Concatena todas as leituras 'unclassified' e 'filtered' geradas pelo ContFree-NGS.
 	"""
 	input:
-		filtered_parts_R1 = expand("MyAssembly_{{genotype}}/6_contamination_removal/parts/{part}.{{sample}}.trimmed.filtered.R1.fastq", part=parts),
-		filtered_parts_R2 = expand("MyAssembly_{{genotype}}/6_contamination_removal/parts/{part}.{{sample}}.trimmed.filtered.R2.fastq", part=parts),
-		unclassified_parts_R1 = expand("MyAssembly_{{genotype}}/6_contamination_removal/parts/{part}.{{sample}}.trimmed.unclassified.R1.fastq", part=parts),
-		unclassified_parts_R2 = expand("MyAssembly_{{genotype}}/6_contamination_removal/parts/{part}.{{sample}}.trimmed.unclassified.R2.fastq", part=parts)
+		filtered_parts_R1 = expand("MyAssembly_{{genotype}}/7_contamination_removal/parts/{part}.{{sample}}.trimmed.filtered.R1.fastq", part=parts),
+		filtered_parts_R2 = expand("MyAssembly_{{genotype}}/7_contamination_removal/parts/{part}.{{sample}}.trimmed.filtered.R2.fastq", part=parts),
+		unclassified_parts_R1 = expand("MyAssembly_{{genotype}}/7_contamination_removal/parts/{part}.{{sample}}.trimmed.unclassified.R1.fastq", part=parts),
+		unclassified_parts_R2 = expand("MyAssembly_{{genotype}}/7_contamination_removal/parts/{part}.{{sample}}.trimmed.unclassified.R2.fastq", part=parts)
 	priority: 1
 	output:
-		filtered_total_R1 = "MyAssembly_{genotype}/6_contamination_removal/{sample}.trimmed.filtered.total.R1.fastq",
-		filtered_total_R2 = "MyAssembly_{genotype}/6_contamination_removal/{sample}.trimmed.filtered.total.R2.fastq",
-		unclassified_total_R1 = "MyAssembly_{genotype}/6_contamination_removal/{sample}.trimmed.unclassified.total.R1.fastq",
-		unclassified_total_R2 = "MyAssembly_{genotype}/6_contamination_removal/{sample}.trimmed.unclassified.total.R2.fastq"
+		filtered_total_R1 = "MyAssembly_{genotype}/7_contamination_removal/{sample}.trimmed.filtered.total.R1.fastq",
+		filtered_total_R2 = "MyAssembly_{genotype}/7_contamination_removal/{sample}.trimmed.filtered.total.R2.fastq",
+		unclassified_total_R1 = "MyAssembly_{genotype}/7_contamination_removal/{sample}.trimmed.unclassified.total.R1.fastq",
+		unclassified_total_R2 = "MyAssembly_{genotype}/7_contamination_removal/{sample}.trimmed.unclassified.total.R2.fastq"
 	threads: 1
 	resources:
 		load=1
@@ -394,24 +394,24 @@ rule merge:
 		"cat {input.unclassified_parts_R1} >> {output.unclassified_total_R1};"
 		"cat {input.unclassified_parts_R2} >> {output.unclassified_total_R2}"
 
-filtered_total_R1 = expand("MyAssembly_{{genotype}}/6_contamination_removal/{sample}.trimmed.filtered.total.R1.fastq", sample=samples)
-filtered_total_R2 = expand("MyAssembly_{{genotype}}/6_contamination_removal/{sample}.trimmed.filtered.total.R2.fastq", sample=samples)
-unclassified_total_R1 = expand("MyAssembly_{{genotype}}/6_contamination_removal/{sample}.trimmed.unclassified.total.R1.fastq", sample=samples)
-unclassified_total_R2 = expand("MyAssembly_{{genotype}}/6_contamination_removal/{sample}.trimmed.unclassified.total.R2.fastq", sample=samples)
+filtered_total_R1 = expand("MyAssembly_{{genotype}}/7_contamination_removal/{sample}.trimmed.filtered.total.R1.fastq", sample=samples)
+filtered_total_R2 = expand("MyAssembly_{{genotype}}/7_contamination_removal/{sample}.trimmed.filtered.total.R2.fastq", sample=samples)
+unclassified_total_R1 = expand("MyAssembly_{{genotype}}/7_contamination_removal/{sample}.trimmed.unclassified.total.R1.fastq", sample=samples)
+unclassified_total_R2 = expand("MyAssembly_{{genotype}}/7_contamination_removal/{sample}.trimmed.unclassified.total.R2.fastq", sample=samples)
 
 rule trinity:
 	"""
 	Executa o Trinity para montar transcriptomas com dois valores de k-mer (k = 25 e k = 31).
 	"""
 	input:
-		filtered_total_R1 = expand("MyAssembly_{{genotype}}/6_contamination_removal/{sample}.trimmed.filtered.total.R1.fastq", sample=samples),
-		filtered_total_R2 = expand("MyAssembly_{{genotype}}/6_contamination_removal/{sample}.trimmed.filtered.total.R2.fastq", sample=samples),
-		unclassified_total_R1 = expand("MyAssembly_{{genotype}}/6_contamination_removal/{sample}.trimmed.unclassified.total.R1.fastq", sample=samples),
-		unclassified_total_R2 = expand("MyAssembly_{{genotype}}/6_contamination_removal/{sample}.trimmed.unclassified.total.R2.fastq", sample=samples) 
+		filtered_total_R1 = expand("MyAssembly_{{genotype}}/7_contamination_removal/{sample}.trimmed.filtered.total.R1.fastq", sample=samples),
+		filtered_total_R2 = expand("MyAssembly_{{genotype}}/7_contamination_removal/{sample}.trimmed.filtered.total.R2.fastq", sample=samples),
+		unclassified_total_R1 = expand("MyAssembly_{{genotype}}/7_contamination_removal/{sample}.trimmed.unclassified.total.R1.fastq", sample=samples),
+		unclassified_total_R2 = expand("MyAssembly_{{genotype}}/7_contamination_removal/{sample}.trimmed.unclassified.total.R2.fastq", sample=samples) 
 	priority: 1
 	output: 
-		k25 = "MyAssembly_{genotype}/7_trinity_assembly/MyAssembly_{genotype}_trinity_k25.Trinity.fasta",
-		k31 = "MyAssembly_{genotype}/7_trinity_assembly/MyAssembly_{genotype}_trinity_k31.Trinity.fasta"
+		k25 = "MyAssembly_{genotype}/8_trinity_assembly/MyAssembly_{genotype}_trinity_k25.Trinity.fasta",
+		k31 = "MyAssembly_{genotype}/8_trinity_assembly/MyAssembly_{genotype}_trinity_k31.Trinity.fasta"
 	params:
 		filtered_total_R1=','.join(filtered_total_R1),
 		filtered_total_R2=','.join(filtered_total_R2),
@@ -426,22 +426,22 @@ rule trinity:
 		k25 = "MyAssembly_{genotype}/logs/trinity/{genotype}.k25.log",
 		k31 = "MyAssembly_{genotype}/logs/trinity/{genotype}.k31.log"
 	shell:
-		"/usr/bin/time -v {trinity} --seqType fq --left {params.filtered_total_R1},{params.unclassified_total_R1} --right {params.filtered_total_R2},{params.unclassified_total_R2} --SS_lib_type RF --max_memory 10G --min_contig_length 200 --CPU {threads} --output 7_trinity_assembly/MyAssembly_{params.genotype}_trinity_k25 --full_cleanup --no_normalize_reads --KMER_SIZE 25 2> {log.k25};"
-		"/usr/bin/time -v {trinity} --seqType fq --left {params.filtered_total_R1},{params.unclassified_total_R1} --right {params.filtered_total_R2},{params.unclassified_total_R2} --SS_lib_type RF --max_memory 10G --min_contig_length 200 --CPU {threads} --output 7_trinity_assembly/MyAssembly_{params.genotype}_trinity_k25 --full_cleanup --no_normalize_reads --KMER_SIZE 31 2> {log.k31}"
+		"/usr/bin/time -v {trinity} --seqType fq --left {params.filtered_total_R1},{params.unclassified_total_R1} --right {params.filtered_total_R2},{params.unclassified_total_R2} --SS_lib_type RF --max_memory 10G --min_contig_length 200 --CPU {threads} --output 8_trinity_assembly/MyAssembly_{params.genotype}_trinity_k25 --full_cleanup --no_normalize_reads --KMER_SIZE 25 2> {log.k25};"
+		"/usr/bin/time -v {trinity} --seqType fq --left {params.filtered_total_R1},{params.unclassified_total_R1} --right {params.filtered_total_R2},{params.unclassified_total_R2} --SS_lib_type RF --max_memory 10G --min_contig_length 200 --CPU {threads} --output 8_trinity_assembly/MyAssembly_{params.genotype}_trinity_k25 --full_cleanup --no_normalize_reads --KMER_SIZE 31 2> {log.k31}"
 
 rule cd_hit_est:
 	"""
 	Concatena os dois transcriptomas montados pelo Trinity (k = 25 e k = 31).
 	"""
 	input: 
-		k25 = "MyAssembly_{genotype}/7_trinity_assembly/MyAssembly_{genotype}_trinity_k25.Trinity.fasta",
-		k31 = "MyAssembly_{genotype}/7_trinity_assembly/MyAssembly_{genotype}_trinity_k31.Trinity.fasta"
+		k25 = "MyAssembly_{genotype}/8_trinity_assembly/MyAssembly_{genotype}_trinity_k25.Trinity.fasta",
+		k31 = "MyAssembly_{genotype}/8_trinity_assembly/MyAssembly_{genotype}_trinity_k31.Trinity.fasta"
 	priority: 1
 	output:
-		mod_k25 = "MyAssembly_{genotype}/7_trinity_assembly/MyAssembly_{genotype}_trinity_k25.Trinity.mod.fasta",
-		mod_k31 = "MyAssembly_{genotype}/7_trinity_assembly/MyAssembly_{genotype}_trinity_k31.Trinity.mod.fasta",
-		merged_mod = "MyAssembly_{genotype}/7_trinity_assembly/MyAssembly_{genotype}_trinity_k25_and_k31.Trinity.merged.mod.fasta",
-		final_cd_hit_est = "MyAssembly_{genotype}/7_trinity_assembly/MyAssembly_{genotype}_trinity_k25_and_k31.Trinity.merged.final.fasta"
+		mod_k25 = "MyAssembly_{genotype}/8_trinity_assembly/MyAssembly_{genotype}_trinity_k25.Trinity.mod.fasta",
+		mod_k31 = "MyAssembly_{genotype}/8_trinity_assembly/MyAssembly_{genotype}_trinity_k31.Trinity.mod.fasta",
+		merged_mod = "MyAssembly_{genotype}/8_trinity_assembly/MyAssembly_{genotype}_trinity_k25_and_k31.Trinity.merged.mod.fasta",
+		final_cd_hit_est = "MyAssembly_{genotype}/8_trinity_assembly/MyAssembly_{genotype}_trinity_k25_and_k31.Trinity.merged.final.fasta"
 	params:
 		genotype="{genotype}",
 		server="figsrv"
@@ -461,10 +461,10 @@ rule extract_contiglenght_301:
 	Extrai contigs com tamanho minimo = 301 do transcriptoma concatenado (k = 25 e k = 31).
 	"""
 	input:
-		transcriptome = "MyAssembly_{genotype}/7_trinity_assembly/MyAssembly_{genotype}_trinity_k25_and_k31.Trinity.merged.final.fasta"
+		transcriptome = "MyAssembly_{genotype}/8_trinity_assembly/MyAssembly_{genotype}_trinity_k25_and_k31.Trinity.merged.final.fasta"
 	priority: 1
 	output: 
-		"MyAssembly_{genotype}_trinity_k25_and_k31.Trinity.merged.final_gt301bp.fasta"
+		"MyAssembly_{genotype}/8_trinity_assembly/MyAssembly_{genotype}_trinity_k25_and_k31.Trinity.merged.final_gt301bp.fasta"
 	params:
 		server="figsrv"
 	resources:
@@ -480,7 +480,7 @@ rule busco:
 	Avaliacao de qualidade do transcriptoma com BUSCO (banco embryophyta como referencia).
 	"""
 	input:
-		transcriptome="MyAssembly_{genotype}/7_trinity_assembly/MyAssembly_{genotype}_trinity_k25_and_k31.Trinity.merged.final_gt301bp.fasta"
+		transcriptome="MyAssembly_{genotype}/8_trinity_assembly/MyAssembly_{genotype}_trinity_k25_and_k31.Trinity.merged.final_gt301bp.fasta"
 	priority: 1
 	output:
 		busco="MyAssembly_{genotype}_k25andk31_busco"
@@ -499,7 +499,7 @@ rule transrate:
 	Avaliacao de qualidade do transcriptoma com TRANSRATE (utilizando o transcriptoma de Sorghum bicolor como referencia).
 	"""
 	input:
-		transcriptome="MyAssembly_{genotype}/7_trinity_assembly/MyAssembly_{genotype}_trinity_k25_and_k31.Trinity.merged.final_gt301bp.fasta",
+		transcriptome="MyAssembly_{genotype}/8_trinity_assembly/MyAssembly_{genotype}_trinity_k25_and_k31.Trinity.merged.final_gt301bp.fasta",
 		ref="Sbicolor_454_v3.1.1.transcript.fa"
 	priority: 1
 	output:
@@ -520,7 +520,7 @@ rule salmon_index_quant:
 	- Gera um salmon index para o transcriptoma concatenado.
 	"""
 	input:
-		transcriptome="MyAssembly_{genotype}/7_trinity_assembly/MyAssembly_{genotype}_trinity_k25_and_k31.Trinity.merged.final_gt301bp.fasta"
+		transcriptome="MyAssembly_{genotype}/8_trinity_assembly/MyAssembly_{genotype}_trinity_k25_and_k31.Trinity.merged.final_gt301bp.fasta"
 	priority: 1
 	output:
 		salmon_index=directory("MyAssembly_{genotype}/10_salmon/index/")
@@ -541,10 +541,10 @@ rule salmon_quant_transcriptome:
 	"""
 	input:
 		salmon_index = "MyAssembly_{genotype}/10_salmon/index/",
-		filtered_R1 = expand("MyAssembly_{{genotype}}/6_contamination_removal/{sample}.trimmed.filtered.total.R1.fastq", sample=samples),
-		filtered_R2 = expand("MyAssembly_{{genotype}}/6_contamination_removal/{sample}.trimmed.filtered.total.R2.fastq", sample=samples),
-		unclassified_R1 = expand("MyAssembly_{{genotype}}/6_contamination_removal/{sample}.trimmed.unclassified.total.R1.fastq", sample=samples),
-		unclassified_R2 = expand("MyAssembly_{{genotype}}/6_contamination_removal/{sample}.trimmed.unclassified.total.R2.fastq", sample=samples)
+		filtered_R1 = expand("MyAssembly_{{genotype}}/7_contamination_removal/{sample}.trimmed.filtered.total.R1.fastq", sample=samples),
+		filtered_R2 = expand("MyAssembly_{{genotype}}/7_contamination_removal/{sample}.trimmed.filtered.total.R2.fastq", sample=samples),
+		unclassified_R1 = expand("MyAssembly_{{genotype}}/7_contamination_removal/{sample}.trimmed.unclassified.total.R1.fastq", sample=samples),
+		unclassified_R2 = expand("MyAssembly_{{genotype}}/7_contamination_removal/{sample}.trimmed.unclassified.total.R2.fastq", sample=samples)
 	priority: 1
 	output:
 		salmon_quant=directory("MyAssembly_{genotype}/10_salmon/quant/")
