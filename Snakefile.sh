@@ -8,12 +8,11 @@
 
 module load miniconda3
 module load salmon/1.8.0
-#conda activate YAATAP
+module load Trinity/2.8.5
+conda activate YAATAP
 
-conda activate /home/felipe.peres/.conda/envs/snakemake-tutorial/envs/snakemake_conekt
+# run complete YAATAP
+snakemake -p -k --resources load=10 -s Snakefile.v2 --rerun-triggers mtime --cluster "qsub -q all.q -V -l h={params.server} -cwd -pe smp {threads}" --jobs 10 --jobname "{rulename}.{jobid}"
 
-snakemake -p -k --resources load=10 -s Snakefile.v1 --rerun-incomplete --cluster "qsub -q all.q -V -l h={params.server} -cwd -pe smp {threads}" --jobs 10 --jobname "{rulename}.{jobid}"
-
-#snakemake --dag MyAssembly_QS99-2014/7_trinity_assembly/MyAssembly_QS99-2014_trinity_k25.Trinity.fasta | dot -Tsvg > dag.svg
-
-#snakemake -np --cluster "qsub -q all.q -V -cwd -l h={params.server} -pe smp {threads} -l mem_free={resources.mem_free}G" --jobs 10
+# generate DAG
+#snakemake --dag | dot -Tsvg > dag.svg
