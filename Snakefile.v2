@@ -416,8 +416,10 @@ rule trinity:
 		unclassified_total_R2 = expand("MyAssembly_{{genotype}}/7_contamination_removal/{sample}.trimmed.unclassified.total.R2.fastq", sample=samples) 
 	priority: 1
 	output: 
-		k25 = "MyAssembly_{genotype}/8_trinity_assembly/MyAssembly_{genotype}_trinity_k25.Trinity.fasta",
-		k31 = "MyAssembly_{genotype}/8_trinity_assembly/MyAssembly_{genotype}_trinity_k31.Trinity.fasta"
+		k25_dir = directory("MyAssembly_{genotype}/8_trinity_assembly/MyAssembly_{genotype}_trinity_k25"),
+		k25_fasta = "MyAssembly_{genotype}/8_trinity_assembly/MyAssembly_{genotype}_trinity_k25/Trinity_k25.fasta",
+		k31_dir = directory("MyAssembly_{genotype}/8_trinity_assembly/MyAssembly_{genotype}_trinity_k31"),
+		k31_fasta = "MyAssembly_{genotype}/8_trinity_assembly/MyAssembly_{genotype}_trinity_k31/Trinity_k31.fasta"
 	params:
 		filtered_total_R1=','.join(filtered_total_R1),
 		filtered_total_R2=','.join(filtered_total_R2),
@@ -432,21 +434,21 @@ rule trinity:
 		k25 = "MyAssembly_{genotype}/logs/trinity/{genotype}.k25.log",
 		k31 = "MyAssembly_{genotype}/logs/trinity/{genotype}.k31.log"
 	shell:
-		"/usr/bin/time -v {trinity} --seqType fq --left {params.filtered_total_R1},{params.unclassified_total_R1} --right {params.filtered_total_R2},{params.unclassified_total_R2} --SS_lib_type RF --max_memory 100G --min_contig_length 200 --CPU {threads} --output {output.k25} --full_cleanup --no_normalize_reads --KMER_SIZE 25 2> {log.k25};"
-		"/usr/bin/time -v {trinity} --seqType fq --left {params.filtered_total_R1},{params.unclassified_total_R1} --right {params.filtered_total_R2},{params.unclassified_total_R2} --SS_lib_type RF --max_memory 100G --min_contig_length 200 --CPU {threads} --output {output.k31} --full_cleanup --no_normalize_reads --KMER_SIZE 31 2> {log.k31}"
+		"/usr/bin/time -v {trinity} --seqType fq --left {params.filtered_total_R1},{params.unclassified_total_R1} --right {params.filtered_total_R2},{params.unclassified_total_R2} --SS_lib_type RF --max_memory 100G --min_contig_length 200 --CPU {threads} --output {output.k25_dir} --full_cleanup --no_normalize_reads --KMER_SIZE 25 2> {log.k25};"
+		"/usr/bin/time -v {trinity} --seqType fq --left {params.filtered_total_R1},{params.unclassified_total_R1} --right {params.filtered_total_R2},{params.unclassified_total_R2} --SS_lib_type RF --max_memory 100G --min_contig_length 200 --CPU {threads} --output {output.k31_dir} --full_cleanup --no_normalize_reads --KMER_SIZE 31 2> {log.k31}"
 
 rule cd_hit_est:
 	"""
 	Concatena os dois transcriptomas montados pelo Trinity (k = 25 e k = 31).
 	"""
 	input: 
-		k25 = "MyAssembly_{genotype}/8_trinity_assembly/MyAssembly_{genotype}_trinity_k25.Trinity.fasta",
-		k31 = "MyAssembly_{genotype}/8_trinity_assembly/MyAssembly_{genotype}_trinity_k31.Trinity.fasta"
+		k25 = "MyAssembly_{genotype}/8_trinity_assembly/MyAssembly_{genotype}_trinity_k25/Trinity_k25.fasta",
+		k31 = "MyAssembly_{genotype}/8_trinity_assembly/MyAssembly_{genotype}_trinity_k31/Trinity_k31.fasta"
 	priority: 1
 	output:
-		mod_k25 = "MyAssembly_{genotype}/8_trinity_assembly/MyAssembly_{genotype}_trinity_k25.Trinity.mod.fasta",
-		mod_k31 = "MyAssembly_{genotype}/8_trinity_assembly/MyAssembly_{genotype}_trinity_k31.Trinity.mod.fasta",
-		merged_mod = "MyAssembly_{genotype}/8_trinity_assembly/MyAssembly_{genotype}_trinity_k25_and_k31.Trinity.merged.mod.fasta",
+		mod_k25 = "MyAssembly_{genotype}/8_trinity_assembly/MyAssembly_{genotype}_trinity_k25/Trinity_k25.mod.fasta",
+		mod_k31 = "MyAssembly_{genotype}/8_trinity_assembly/MyAssembly_{genotype}_trinity_k31/Trinity_k31.mod.fasta",
+		merged_mod = "MyAssembly_{genotype}/8_trinity_assembly/MyAssebly_{genotype}_trinity_k25_and_k31.Trinity.merged.mod.fasta",
 		final_cd_hit_est = "MyAssembly_{genotype}/8_trinity_assembly/MyAssembly_{genotype}_trinity_k25_and_k31.Trinity.merged.final.fasta"
 	params:
 		genotype="{genotype}",
