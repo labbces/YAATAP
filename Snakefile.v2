@@ -49,7 +49,7 @@ rule all:
 		expand("MyAssembly_{genotype}/9_busco/", genotype=GENOTYPE),
 
 		# generate transrate output
-		expand("MyAssembly_{genotype}/10_transrate/transrate_comparative_Shorgum_vs_{genotype}", genotype=GENOTYPE),
+		expand("MyAssembly_{genotype}/10_transrate/", genotype=GENOTYPE),
 
 		# generate salmon output
 		expand("MyAssembly_{genotype}/11_salmon/quant/", genotype=GENOTYPE)
@@ -493,7 +493,8 @@ rule busco:
 		transcriptome="MyAssembly_{genotype}/8_trinity_assembly/MyAssembly_{genotype}_trinity_k25_and_k31.Trinity.merged.final_gt301bp.fasta"
 	priority: 1
 	output:
-		busco = "MyAssembly_{genotype}/9_busco/"
+		busco_out = directory("MyAssembly_{genotype}/9_busco/")
+		out_name = "embryophyta_{genotype}"
 	params:
 		server="figsrv"
 	resources:
@@ -502,8 +503,7 @@ rule busco:
 	log:
 		"MyAssembly_{genotype}/logs/busco/{genotype}.log"
 	shell:
-		"/usr/bin/time -v {busco} -i {input.transcriptome} -o {output.busco} -c {threads} -m transcriptome -l /Storage/databases/BUSCO_DBs/embryophyta_odb9/ 2> {log}"		
-
+		"/usr/bin/time -v {busco} -i {input.transcriptome} -o {output.out_name} --out_path {busco_out} -c {threads} -m transcriptome -l /Storage/databases/BUSCO_DBs/embryophyta_odb9/ 2> {log}"		
 rule transrate:
 	"""
 	Avaliacao de qualidade do transcriptoma com TRANSRATE (utilizando o transcriptoma de Sorghum bicolor como referencia).
@@ -513,7 +513,7 @@ rule transrate:
 		ref="Sbicolor_454_v3.1.1.transcript.fa"
 	priority: 1
 	output:
-		transrate=directory("MyAssembly_{genotype}/10_transrate/transrate_comparative_Shorgum_vs_{genotype}")
+		transrate=directory("MyAssembly_{genotype}/10_transrate/")
 	params:
 		server="figsrv"
 	resources:
