@@ -456,8 +456,8 @@ rule cd_hit_est:
 		genotype="{genotype}",
 		server="figsrv"
 	resources:
-		load=1
-	threads: 1
+		load=10
+	threads: 10
 	log:
 		"MyAssembly_{genotype}/logs/cd_hit_est_transcriptomes/{genotype}.log"
 	shell:
@@ -537,8 +537,8 @@ rule salmon_index_quant:
 	params:
 		server="figsrv"
 	resources:
-		load=1
-	threads: 2
+		load=10
+	threads: 10
 	log:
 		"MyAssembly_{genotype}/logs/salmon_index/{genotype}.log"
 	shell:
