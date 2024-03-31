@@ -7,8 +7,8 @@ yetAnotherAutoTranscriptAssemblyPipeline
 # install mamba
 conda install -n base -c conda-forge mamba
 
-# install snakemake
-mamba create -c conda-forge -c bioconda -n YAATAP snakemake
+# install snakemake (v7.25.0)
+mamba create -c conda-forge -c bioconda -n YAATAP snakemake=7.25.0
 
 # dry-run YAATAP
 conda activate YAATAP
@@ -17,15 +17,17 @@ snakemake -np
 
 ### Requirements
 
-* ffq v0.2.1
+* snakemake v7.25.0
+* sratoolkit v3.0.10
+* ffq v0.3.0
 * jq-linux64 jq-1.6
 * FastQC v0.11.8
 * BBDuk v35.85
-* Kraken2 v2.1.2
+* Kraken2 v2.0.7-beta
 * ContFree-NGS.py v1.0
 * Trinity v2.8.5
 * CD-HIT-EST v4.8.1
-* BUSCO v5
+* BUSCO v3
 * transrate v1.0.3
 * Salmon v1.3.0
 * Python 3.x
