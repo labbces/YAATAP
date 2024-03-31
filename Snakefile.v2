@@ -502,7 +502,7 @@ rule busco:
 	log:
 		"MyAssembly_{genotype}/logs/busco/{genotype}.log"
 	shell:
-		"/usr/bin/time -v run_BUSCO.py -i {input.transcriptome} -o {output.busco} -c {threads} -m transcriptome -l /Storage/databases/BUSCO_DBs/embryophyta_odb9/ 2> {log}"		
+		"/usr/bin/time -v {busco} -i {input.transcriptome} -o {output.busco} -c {threads} -m transcriptome -l /Storage/databases/BUSCO_DBs/embryophyta_odb9/ 2> {log}"		
 
 rule transrate:
 	"""
