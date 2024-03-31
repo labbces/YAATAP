@@ -415,11 +415,13 @@ rule trinity:
 		unclassified_total_R1 = expand("MyAssembly_{{genotype}}/7_contamination_removal/{sample}.trimmed.unclassified.total.R1.fastq", sample=samples),
 		unclassified_total_R2 = expand("MyAssembly_{{genotype}}/7_contamination_removal/{sample}.trimmed.unclassified.total.R2.fastq", sample=samples) 
 	priority: 1
-	output: 
+	output:
 		k25_dir = directory("MyAssembly_{genotype}/8_trinity_assembly/MyAssembly_{genotype}_trinity_k25"),
-		k25_fasta = "MyAssembly_{genotype}/8_trinity_assembly/MyAssembly_{genotype}_trinity_k25/Trinity_k25.fasta",
+		k25_fasta = "MyAssembly_{genotype}/8_trinity_assembly/MyAssembly_{genotype}_trinity_k25.Trinity.fasta",
+		k25_map = "MyAssembly_{genotype}/8_trinity_assembly/MyAssembly_{genotype}_trinity_k25.Trinity.fasta.gene_trans_map",
 		k31_dir = directory("MyAssembly_{genotype}/8_trinity_assembly/MyAssembly_{genotype}_trinity_k31"),
-		k31_fasta = "MyAssembly_{genotype}/8_trinity_assembly/MyAssembly_{genotype}_trinity_k31/Trinity_k31.fasta"
+		k31_fasta = "MyAssembly_{genotype}/8_trinity_assembly/MyAssembly_{genotype}_trinity_k31.Trinity.fasta",
+		k31_map = "MyAssembly_{genotype}/8_trinity_assembly/MyAssembly_{genotype}_trinity_k31.Trinity.fasta.gene_trans_map"
 	params:
 		filtered_total_R1=','.join(filtered_total_R1),
 		filtered_total_R2=','.join(filtered_total_R2),
@@ -441,13 +443,13 @@ rule cd_hit_est:
 	"""
 	Concatena os dois transcriptomas montados pelo Trinity (k = 25 e k = 31).
 	"""
-	input: 
-		k25 = "MyAssembly_{genotype}/8_trinity_assembly/MyAssembly_{genotype}_trinity_k25/Trinity_k25.fasta",
-		k31 = "MyAssembly_{genotype}/8_trinity_assembly/MyAssembly_{genotype}_trinity_k31/Trinity_k31.fasta"
+	input: 	
+		k25 = "MyAssembly_{genotype}/8_trinity_assembly/MyAssembly_{genotype}_trinity_k25.Trinity.fasta",
+		k31 = "MyAssembly_{genotype}/8_trinity_assembly/MyAssembly_{genotype}_trinity_k31.Trinity.fasta"
 	priority: 1
 	output:
-		mod_k25 = "MyAssembly_{genotype}/8_trinity_assembly/MyAssembly_{genotype}_trinity_k25/Trinity_k25.mod.fasta",
-		mod_k31 = "MyAssembly_{genotype}/8_trinity_assembly/MyAssembly_{genotype}_trinity_k31/Trinity_k31.mod.fasta",
+		mod_k25 = "MyAssembly_{genotype}/8_trinity_assembly/MyAssembly_{genotype}_trinity_k25.Trinity.mod.fasta",
+		mod_k31 = "MyAssembly_{genotype}/8_trinity_assembly/MyAssembly_{genotype}_trinity_k31.Trinity.mod.fasta",
 		merged_mod = "MyAssembly_{genotype}/8_trinity_assembly/MyAssebly_{genotype}_trinity_k25_and_k31.Trinity.merged.mod.fasta",
 		final_cd_hit_est = "MyAssembly_{genotype}/8_trinity_assembly/MyAssembly_{genotype}_trinity_k25_and_k31.Trinity.merged.final.fasta"
 	params:
