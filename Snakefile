@@ -44,6 +44,10 @@ salmon = config["software"]["salmon"]
 
 rule all:
 	input:
+		# gerar relatorio fastqc leituras cruas
+		expand("MyAssembly_{genotype}/2_raw_reads_fastqc_reports/{sample}_1_fastqc.html", genotype=GENOTYPE, sample=samples),
+		expand("MyAssembly_{genotype}/2_raw_reads_fastqc_reports/{sample}_1_fastqc.html", genotype=GENOTYPE, sample=samples),
+	
 		# gerar output do busco
 		expand("MyAssembly_{genotype}/9_busco/", genotype=GENOTYPE),
 
@@ -51,7 +55,13 @@ rule all:
 		expand("MyAssembly_{genotype}/10_transrate/", genotype=GENOTYPE),
 
 		# gerar quantificacao das leituras no trancriptoma montado
-		expand("MyAssembly_{genotype}/11_salmon/quant/", genotype=GENOTYPE)
+		expand("MyAssembly_{genotype}/11_salmon/quant/", genotype=GENOTYPE),
+		
+		# gerar relatorio fastqc leituras limpas (depois do contfree)
+		expand("MyAssembly_{genotype}/12_after_contfree_reads_fastqc_reports/{sample}.trimmed.filtered.total.R1_fastqc.html", genotype=GENOTYPE, sample=samples),
+		expand("MyAssembly_{genotype}/12_after_contfree_reads_fastqc_reports/{sample}.trimmed.filtered.total.R2_fastqc.html", genotype=GENOTYPE, sample=samples),
+		expand("MyAssembly_{genotype}/12_after_contfree_reads_fastqc_reports/{sample}.trimmed.unclassified.total.R1_fastqc.html", genotype=GENOTYPE, sample=samples),
+		expand("MyAssembly_{genotype}/12_after_contfree_reads_fastqc_reports/{sample}.trimmed.unclassified.total.R2_fastqc.html", genotype=GENOTYPE, sample=samples)
 
 		# gerar inputs do trinity (sequencias limpas e sem contaminantes)
 		#expand("MyAssembly_{genotype}/7_contamination_removal/{sample}.trimmed.filtered.total.R1.fastq", genotype=GENOTYPE, sample=samples),
@@ -134,6 +144,7 @@ rule fastqc:
 		"{fastqc} -f fastq {input.R1} -o MyAssembly_{params.genotype}/2_raw_reads_fastqc_reports 2> {log};"
 		"{fastqc} -f fastq {input.R2} -o MyAssembly_{params.genotype}/2_raw_reads_fastqc_reports 2> {log}"
 
+'''
 rule salmon_index:
 	"""
 	Gera um index do salmon para a quantificacao das leituras cruas.
@@ -218,6 +229,8 @@ def get_filter_stranded_samples(wildcards):
 	except EmptyDataError:
 		print("Empty file - {f1}")
 
+'''
+
 rule bbduk:
 	"""
 	Se as leituras cruas forem stranded e pareadas (resultado do filtro anterior):
@@ -226,10 +239,9 @@ rule bbduk:
 	- Filtra sequencias por minlength=75 e qualidade < Q20.
 	"""
 	input:
-		fastq_raw = "MyAssembly_{genotype}/2_raw_reads_fastqc_reports/{sample}_1_fastqc.html",
 		R1 = "MyAssembly_{genotype}/1_raw_reads_in_fastq_format/{sample}_1.fastq",
 		R2 = "MyAssembly_{genotype}/1_raw_reads_in_fastq_format/{sample}_2.fastq",
-		new_srrlist = "MyAssembly_{genotype}/3_salmon/quant/{genotype}_srrlist.csv"
+		#new_srrlist = "MyAssembly_{genotype}/3_salmon/quant/{genotype}_srrlist.csv"
 	priority: 1
 	output:
 		R1 = "MyAssembly_{genotype}/4_trimmed_reads/{sample}.trimmed.R1.fastq",
@@ -406,6 +418,35 @@ filtered_total_R1 = expand("MyAssembly_{{genotype}}/7_contamination_removal/{sam
 filtered_total_R2 = expand("MyAssembly_{{genotype}}/7_contamination_removal/{sample}.trimmed.filtered.total.R2.fastq", sample=samples)
 unclassified_total_R1 = expand("MyAssembly_{{genotype}}/7_contamination_removal/{sample}.trimmed.unclassified.total.R1.fastq", sample=samples)
 unclassified_total_R2 = expand("MyAssembly_{{genotype}}/7_contamination_removal/{sample}.trimmed.unclassified.total.R2.fastq", sample=samples)
+
+rule fastqc_after_contfree:
+	"""
+	Gera um relatorio FastQC com a qualidade das leituras trimadas e sem contaminantes apos ContFree-NGS.
+	"""
+	input:
+		filtered_total_R1 = "MyAssembly_{genotype}/7_contamination_removal/{sample}.trimmed.filtered.total.R1.fastq",
+		filtered_total_R2 = "MyAssembly_{genotype}/7_contamination_removal/{sample}.trimmed.filtered.total.R2.fastq",
+		unclassified_total_R1 = "MyAssembly_{genotype}/7_contamination_removal/{sample}.trimmed.unclassified.total.R1.fastq",
+		unclassified_total_R2 = "MyAssembly_{genotype}/7_contamination_removal/{sample}.trimmed.unclassified.total.R2.fastq"
+	priority: 1
+	output:
+		html_filtered_R1 = "MyAssembly_{genotype}/12_after_contfree_reads_fastqc_reports/{sample}.trimmed.filtered.total.R1_fastqc.html",
+		html_filtered_R2 = "MyAssembly_{genotype}/12_after_contfree_reads_fastqc_reports/{sample}.trimmed.filtered.total.R2_fastqc.html",
+		html_unclassified_R1 = "MyAssembly_{genotype}/12_after_contfree_reads_fastqc_reports/{sample}.trimmed.unclassified.total.R1_fastqc.html",
+		html_unclassified_R2 = "MyAssembly_{genotype}/12_after_contfree_reads_fastqc_reports/{sample}.trimmed.unclassified.total.R2_fastqc.html"
+	threads: 1
+	resources:
+		load=1
+	params:
+		genotype="{genotype}",
+		server="figsrv"
+	log:
+		"MyAssembly_{genotype}/logs/fastqc_after_contfree/{sample}.log"
+	shell:
+		"{fastqc} -f fastq {input.filtered_total_R1} -o MyAssembly_{params.genotype}/12_after_contfree_reads_fastqc_reports 2> {log};"
+		"{fastqc} -f fastq {input.filtered_total_R2} -o MyAssembly_{params.genotype}/12_after_contfree_reads_fastqc_reports 2> {log};"
+		"{fastqc} -f fastq {input.unclassified_total_R1} -o MyAssembly_{params.genotype}/12_after_contfree_reads_fastqc_reports 2> {log};"
+		"{fastqc} -f fastq {input.unclassified_total_R2} -o MyAssembly_{params.genotype}/12_after_contfree_reads_fastqc_reports 2> {log}"
 
 rule trinity:
 	"""
