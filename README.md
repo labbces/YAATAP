@@ -41,6 +41,10 @@ To run YAATAP, it is necessary to configure the following input files:
 >Note: The filename for this file should include the name of the genotype to be assembled. For example, for the genotype SP80-3280, the file should be named "SP80-3280_samples.csv".
 - **[parts.csv](https://github.com/labbces/YAATAP/blob/main/parts.csv)**: CSV file indicating how many parts the Kraken file should be divided into (to divide it into 6 parts, this file should contain the following content: 00, 01, 02, 03, 04).
 
+## Workflow
+
+![](https://github.com/labbces/YAATAP/blob/main/images/complete_DAG.svg)
+
 ## Common issues
 
 Snakemake might encounter issues when executing BUSCO, leading to the following error
