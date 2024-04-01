@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 # usage:
-# snakemake -p -k --resources load=10 -s Snakefile --rerun-incomplete --cluster "qsub -q all.q -V -cwd -pe smp {threads}" --jobs 10 --jobname "{rulename}.{jobid}"
+# snakemake -p -k --resources load=10 -s Snakefile.v2 --cluster "qsub -q all.q -V -l h={params.server} -cwd -pe smp {threads}" --jobs 10 --jobname "{rulename}.{jobid}"
 
 configfile: "config.yaml"
 
@@ -72,7 +72,7 @@ rule download_fastq:
 		R2 = "MyAssembly_{genotype}/1_raw_reads_in_fastq_format/{sample}_2.fastq"
 	threads: 1
 	resources:
-		load=6
+		load=3
 	params:
 		genotype="{genotype}",
 		server="figsrv"
@@ -149,8 +149,8 @@ rule salmon_index:
 	resources:
 		load=1
 	threads: 1
-	log:
-		"MyAssembly_{genotype}/logs/salmon_reference/index/reference_index.log"
+	#log:
+	#	"MyAssembly_{genotype}/logs/salmon_reference/index/reference_index.log"
 	name: "salmon_index"
 	shell:
 		"""
@@ -529,7 +529,7 @@ rule transrate:
 	shell:
 		"/usr/bin/time -v {transrate} --assembly {input.transcriptome} --reference {input.ref} --threads {threads} --output {output.transrate_dir} 2> {log}"
 
-rule salmon_index_quant:
+rule salmon_transcriptome_index:
 	"""
 	Avaliacao de qualidade do transcriptoma com Salmon
 	- Gera um salmon index para o transcriptoma concatenado.
@@ -549,7 +549,7 @@ rule salmon_index_quant:
 	shell:
 		"/usr/bin/time -v {salmon} index -t {input.transcriptome} -p {threads} -i {output.salmon_index} --gencode 2> {log}"
 
-rule salmon_quant_transcriptome:
+rule salmon_transcriptome_quant:
 	"""
 	Avaliacao de qualidade do transcriptoma com Salmon:
 	- Quantificacao das leituras trimadas no transcriptoma concatenado.
