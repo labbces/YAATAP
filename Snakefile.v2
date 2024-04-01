@@ -504,6 +504,7 @@ rule busco:
 		"MyAssembly_{genotype}/logs/busco/{genotype}.log"
 	shell:
 		"/usr/bin/time -v {busco} -i {input.transcriptome} -o {output.out_name} --out_path embryophyta_{params.genotype} -c {threads} -m transcriptome -l /Storage/data1/felipe.peres/BUSCO_DBs/embryophyta_odb10 2> {log}"		
+
 rule transrate:
 	"""
 	Avaliacao de qualidade do transcriptoma com TRANSRATE (utilizando o transcriptoma de Sorghum bicolor como referencia).
@@ -513,7 +514,8 @@ rule transrate:
 		ref="Sbicolor_454_v3.1.1.transcript.fa"
 	priority: 1
 	output:
-		transrate=directory("MyAssembly_{genotype}/10_transrate/")
+		transrate_out="MyAssembly_{genotype}/10_transrate/assemblies.csv",
+		transrate_dir=directory("MyAssembly_{genotype}/10_transrate/")
 	params:
 		server="figsrv"
 	resources:
@@ -522,7 +524,7 @@ rule transrate:
 	log:
 		"MyAssembly_{genotype}/logs/transrate/{genotype}.log"
 	shell:
-		"/usr/bin/time -v {transrate} --assembly {input.transcriptome} --reference {input.ref} --threads {threads} --output {output.transrate} 2> {log}"
+		"/usr/bin/time -v {transrate} --assembly {input.transcriptome} --reference {input.ref} --threads {threads} --output {output.transrate_dir} 2> {log}"
 
 rule salmon_index_quant:
 	"""
