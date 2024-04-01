@@ -39,7 +39,6 @@ contfree_ngs = config["software"]["contfree_ngs"]
 trinity = config["software"]["trinity"]
 cd_hit_est = config["software"]["cd_hit_est"]
 extract_contigs = config["software"]["extract_contigs"]
-busco = config["software"]["busco"]
 transrate = config["software"]["transrate"]
 salmon = config["software"]["salmon"]
 
@@ -506,8 +505,9 @@ rule busco:
 	log:
 		"MyAssembly_{genotype}/logs/busco/{genotype}.log"
 	shell:
-		"/usr/bin/time -v {busco} -i {input.transcriptome} -o {params.genotype} --out_path {output.busco_out} -c {threads} -m transcriptome -l /Storage/data1/felipe.peres/BUSCO_DBs/embryophyta_odb10 2> {log}"		
-
+		"""
+		/usr/bin/time -v busco -i {input.transcriptome} -o {params.genotype} --out_path {output.busco_out} -c {threads} -m transcriptome -l /Storage/data1/felipe.peres/BUSCO_DBs/embryophyta_odb10 2> {log}
+		"""
 rule transrate:
 	"""
 	Avaliacao de qualidade do transcriptoma com TRANSRATE (utilizando o transcriptoma de Sorghum bicolor como referencia).
