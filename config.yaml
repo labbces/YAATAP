@@ -12,6 +12,5 @@ software:
         trinity: /Storage/progs/trinityrnaseq-Trinity-v2.8.5/Trinity
         cd_hit_est: /Storage/progs/cd-hit-v4.8.1-2019-0228/cd-hit-est
         extract_contigs: software/extractSequencesWithMinLength.pl
-        busco: /Storage/progs/BUSCO3/scripts/run_BUSCO.py
         transrate: /Storage/progs/transrate-1.0.3-linux-x86_64/transrate
         salmon: /Storage/progs/salmon-1.3.0_linux_x86_64/bin/salmon
