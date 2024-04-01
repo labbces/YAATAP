@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
-#Usage:
-#snakemake -p -k --resources load=6 -s Snakefile --rerun-incomplete --cluster "qsub -q all.q -V -cwd -pe smp {threads}" --jobs 6 --jobname "{rulename}.{jobid}"
+# usage:
+# snakemake -p -k --resources load=10 -s Snakefile --rerun-incomplete --cluster "qsub -q all.q -V -cwd -pe smp {threads}" --jobs 10 --jobname "{rulename}.{jobid}"
 
 configfile: "config.yaml"
 
@@ -27,7 +27,7 @@ reference_transcriptome = "/Storage/data1/riano/Sugarcane/Pantranscriptome/Assem
 # por exemplo - dividir em 5 partes: 00,01,02,03,04
 parts = pd.read_csv("parts.csv")
 
-# software executable
+# path para executaveis
 fastq_dump = config["software"]["fastq-dump"]
 ffq = config["software"]["ffq"]
 jq = config["software"]["jq"]
@@ -45,16 +45,16 @@ salmon = config["software"]["salmon"]
 
 rule all:
 	input:
-		# generate busco output
+		# gerar output do busco
 		expand("MyAssembly_{genotype}/9_busco/", genotype=GENOTYPE),
 
-		# generate transrate output
+		# gerar output do transrate
 		expand("MyAssembly_{genotype}/10_transrate/", genotype=GENOTYPE),
 
-		# generate salmon output
+		# gerar quantificacao das leituras no trancriptoma montado
 		expand("MyAssembly_{genotype}/11_salmon/quant/", genotype=GENOTYPE)
 
-		# getting only total parts before run Trinity:
+		# gerar inputs do trinity (sequencias limpas e sem contaminantes)
 		#expand("MyAssembly_{genotype}/7_contamination_removal/{sample}.trimmed.filtered.total.R1.fastq", genotype=GENOTYPE, sample=samples),
 		#expand("MyAssembly_{genotype}/7_contamination_removal/{sample}.trimmed.filtered.total.R2.fastq", genotype=GENOTYPE, sample=samples),
 		#expand("MyAssembly_{genotype}/7_contamination_removal/{sample}.trimmed.unclassified.total.R1.fastq", genotype=GENOTYPE, sample=samples),
@@ -64,6 +64,7 @@ rule all:
 rule download_fastq:
 	"""
 	Baixa os arquivos brutos (fastq) das leituras 1 e 2 das amostras do genotipo {params.genotype}.
+	- Essa regra utiliza o ffq para gerar a url do accession e depois baixa as leituras com wget
 	"""
 	priority: 1
 	output:
@@ -91,6 +92,8 @@ rule download_fastq:
 rule download_fastq:
 	"""
 	Baixa os arquivos brutos (fastq) das leituras 1 e 2 das amostras do genotipo {params.genotype}.
+	- Essa regra utiliza o sratoolkit para baixar as leituras
+	- Nota: o parametro --defline-seq define o padrao do header das sequencias. Isso eh essencial para o funcionamento das proximas etapas do YATAAP
 	"""
 	priority: 1
 	output:
@@ -146,8 +149,8 @@ rule salmon_index:
 	resources:
 		load=1
 	threads: 1
-#	log:
-#		"MyAssembly_{genotype}/logs/salmon/index/salmon_index.log"
+	log:
+		"MyAssembly_{genotype}/logs/salmon_reference/index/reference_index.log"
 	name: "salmon_index"
 	shell:
 		"""
@@ -173,7 +176,7 @@ rule salmon_quant:
 		load=10
 	threads: 10
 	log:
-		"MyAssembly_{genotype}/logs/salmon/quant/{sample}.log"
+		"MyAssembly_{genotype}/logs/salmon_reference/quant/{sample}.log"
 	name: "salmon_quant"
 	shell:
 		"""
@@ -208,7 +211,7 @@ rule filter_stranded:
 		"""
 
 def get_filter_stranded_samples(wildcards):
-	#this file is created by filter_stranded (rule above)
+	# this file is created by filter_stranded (rule above)
 	try:
 		with open(f"MyAssembly_{wildcards.genotype}/3_salmon/quant/{wildcards.genotype}_srrlist.csv", "r") as f1:
 			stranded_samples = pd.read_csv(f1)
@@ -503,7 +506,7 @@ rule busco:
 	log:
 		"MyAssembly_{genotype}/logs/busco/{genotype}.log"
 	shell:
-		"/usr/bin/time -v {busco} -i {input.transcriptome} -o {output.out_name} --out_path embryophyta_{params.genotype} -c {threads} -m transcriptome -l /Storage/data1/felipe.peres/BUSCO_DBs/embryophyta_odb10 2> {log}"		
+		"/usr/bin/time -v {busco} -i {input.transcriptome} -o {params.genotype} --out_path {output.busco_out} -c {threads} -m transcriptome -l /Storage/data1/felipe.peres/BUSCO_DBs/embryophyta_odb10 2> {log}"		
 
 rule transrate:
 	"""
@@ -542,7 +545,7 @@ rule salmon_index_quant:
 		load=10
 	threads: 10
 	log:
-		"MyAssembly_{genotype}/logs/salmon_index/{genotype}.log"
+		"MyAssembly_{genotype}/logs/salmon_transcriptome/index/{genotype}.log"
 	shell:
 		"/usr/bin/time -v {salmon} index -t {input.transcriptome} -p {threads} -i {output.salmon_index} --gencode 2> {log}"
 
@@ -570,6 +573,6 @@ rule salmon_quant_transcriptome:
 		load=10
 	threads: 10
 	log: 
-		"MyAssembly_{genotype}/logs/salmon_quant/{genotype}.log"
+		"MyAssembly_{genotype}/logs/salmon_transcriptome/quant/{genotype}.log"
 	shell:
 		"/usr/bin/time -v {salmon} quant -i {input.salmon_index} -l A -1 {params.filtered_total_R1} {params.unclassified_total_R1} -2 {params.filtered_total_R2} {params.unclassified_total_R2} --validateMappings -o {output.salmon_quant} -p {threads} 2> {log}"
