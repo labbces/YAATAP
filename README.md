@@ -1,21 +1,7 @@
 # YAATAP
 yetAnotherAutoTranscriptAssemblyPipeline
 
-### Installing and running
-
-```bash
-# install mamba
-conda install -n base -c conda-forge mamba
-
-# install snakemake (v7.25.0)
-mamba create -c conda-forge -c bioconda -n YAATAP snakemake=7.25.0
-
-# dry-run YAATAP
-conda activate YAATAP
-snakemake -np
-```
-
-### Requirements
+## Requirements
 
 * snakemake v7.25.0
 * sratoolkit v3.0.10
@@ -32,6 +18,59 @@ snakemake -np
 * Salmon v1.3.0
 * Python 3.x
 
-### References
+## Installing and running
+
+```bash
+# create YAATAP environment
+conda env create -n YAATAP -f environment.txt
+
+# dry-run YAATAP
+conda activate YAATAP
+snakemake -np
+
+# running in the cluster
+qsub Snakefile.sh
+```
+
+## Input
+
+To run YAATAP, it is necessary to configure the following input files:
+
+- **[config.yaml](https://github.com/labbces/YAATAP/blob/main/config.yaml)**: Snakemake configuration file, containing paths to executable software.
+- **[genotype_samples.csv](https://github.com/labbces/YAATAP/blob/main/SP80-3280_samples.csv)**: CSV file with accessions (SRA) of the raw data to be downloaded (e.g. SRR1974519,SRR1979656,SRR1979657,...).
+>Note: The filename for this file should include the name of the genotype to be assembled. For example, for the genotype SP80-3280, the file should be named "SP80-3280_samples.csv".
+- **[parts.csv](https://github.com/labbces/YAATAP/blob/main/parts.csv)**: CSV file indicating how many parts the Kraken file should be divided into (to divide it into 6 parts, this file should contain the following content: 00, 01, 02, 03, 04).
+
+## Common issues
+
+Snakemake might encounter issues when executing BUSCO, leading to the following error
+```
+No module named 'busco'
+There was a problem installing BUSCO or importing one of its dependencies. See the user guide and the GitLab issue board (https://gitlab.com/ezlab/busco/issues) if you need further assistance.
+```
+To fix it, simply update the shebang in BUSCO to specify your python environment (the path to python in Conda):
+
+```bash
+conda activate YAATAP
+
+# copy the path to python
+which python
+/home/your_username/.conda/envs/YAATAP/bin/python
+
+# open the executable script of busco  
+which busco
+~/.conda/envs/YAATAP/bin/busco
+
+# update the shebang
+vi ~/.conda/envs/YAATAP/bin/busco
+
+# before
+#!/usr/bin/env python3
+
+# after
+#!/home/your_username/.conda/envs/YAATAP/bin/python
+```
+
+## References
 
 Köster, J., Rahmann, S. (2012) Snakemake - a scalable bioinformatics workflow engine, Bioinformatics, Volume 28, Issue 19, 1 October 2012, Pag 2520–2522 - https://doi.org/10.1093/bioinformatics/bts480
