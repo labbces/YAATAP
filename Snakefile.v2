@@ -494,16 +494,16 @@ rule busco:
 	priority: 1
 	output:
 		busco_out = directory("MyAssembly_{genotype}/9_busco/")
-		out_name = "embryophyta_{genotype}"
 	params:
-		server="figsrv"
+		server="figsrv",
+		genotype="{genotype}"
 	resources:
 		load=10
 	threads: 10
 	log:
 		"MyAssembly_{genotype}/logs/busco/{genotype}.log"
 	shell:
-		"/usr/bin/time -v {busco} -i {input.transcriptome} -o {output.out_name} --out_path {busco_out} -c {threads} -m transcriptome -l /Storage/databases/BUSCO_DBs/embryophyta_odb9/ 2> {log}"		
+		"/usr/bin/time -v {busco} -i {input.transcriptome} -o {output.out_name} --out_path embryophyta_{params.genotype} -c {threads} -m transcriptome -l /Storage/data1/felipe.peres/BUSCO_DBs/embryophyta_odb10 2> {log}"		
 rule transrate:
 	"""
 	Avaliacao de qualidade do transcriptoma com TRANSRATE (utilizando o transcriptoma de Sorghum bicolor como referencia).
