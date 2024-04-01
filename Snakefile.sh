@@ -9,6 +9,7 @@
 module load miniconda3
 module load salmon/1.8.0
 module load Trinity/2.8.5
+module load transrate/1.0.3
 conda activate YAATAP
 
 # run complete YAATAP
