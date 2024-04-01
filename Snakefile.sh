@@ -13,7 +13,7 @@ module load transrate/1.0.3
 conda activate YAATAP
 
 # run complete YAATAP
-snakemake -p -k --resources load=10 -s Snakefile.v2 --rerun-triggers mtime --cluster "qsub -q all.q -V -l h={params.server} -cwd -pe smp {threads}" --jobs 10 --jobname "{rulename}.{jobid}"
+snakemake -p -k --resources load=10 -s Snakefile --cluster "qsub -q all.q -V -l h={params.server} -cwd -pe smp {threads}" --jobs 10 --jobname "{rulename}.{jobid}"
 
 # generate DAG
 #snakemake --dag | dot -Tsvg > dag.svg
