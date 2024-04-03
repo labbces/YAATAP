@@ -47,33 +47,52 @@ To run YAATAP, it is necessary to configure the following input files:
 
 ## Common issues
 
-Snakemake might encounter issues when executing BUSCO, leading to the following error
-```
-No module named 'busco'
-There was a problem installing BUSCO or importing one of its dependencies. See the user guide and the GitLab issue board (https://gitlab.com/ezlab/busco/issues) if you need further assistance.
-```
-To fix it, simply update the shebang in BUSCO to specify your python environment (the path to python in Conda):
+<details>
+  <summary>There is not enough space on the disk</summary>
+  
+  The SRA Toolkit by default stores the download cache of accessions in your home directory. If you are downloading new datasets on an HPC, one solution to this error is to properly configure the location for SRA cache storage.
+  >Follow this simple tutorial to set up your cache directory: https://github.com/ncbi/sra-tools/wiki/03.-Quick-Toolkit-Configuration
 
-```bash
-conda activate YAATAP
 
-# copy the path to python
-which python
-/home/your_username/.conda/envs/YAATAP/bin/python
 
-# open the executable script of busco  
-which busco
-~/.conda/envs/YAATAP/bin/busco
 
-# update the shebang
-vi ~/.conda/envs/YAATAP/bin/busco
 
-# before
-#!/usr/bin/env python3
 
-# after
-#!/home/your_username/.conda/envs/YAATAP/bin/python
-```
+</details>
+
+<details>
+  <summary>No module named 'busco'</summary>
+  
+  Snakemake might encounter issues when executing BUSCO, leading to the following error
+  
+  ```
+  No module named 'busco'
+  There was a problem installing BUSCO or importing one of its dependencies. See the user guide and the GitLab issue board (https://gitlab.com/ezlab/busco/issues) if you need further assistance.
+  ```
+  
+  To fix it, simply update the shebang in BUSCO to specify your python environment (the path to python in Conda):
+
+  ```bash
+  conda activate YAATAP
+
+  # copy the path to python
+  which python
+  /home/your_username/.conda/envs/YAATAP/bin/python
+
+  # open the executable script of busco  
+  which busco
+  ~/.conda/envs/YAATAP/bin/busco
+
+  # update the shebang
+  vi ~/.conda/envs/YAATAP/bin/busco
+
+  # before
+  #!/usr/bin/env python3
+
+  # after
+  #!/home/your_username/.conda/envs/YAATAP/bin/python
+  ```
+</details>
 
 ## References
 
