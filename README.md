@@ -21,6 +21,10 @@ yetAnotherAutoTranscriptAssemblyPipeline
 ## Installing and running
 
 ```bash
+# add bioconda and conda-forge channels before creating the environment
+conda config --add channels bioconda
+conda config --add channels conda-forge
+
 # create YAATAP environment
 conda env create -n YAATAP -f environment.txt
 
