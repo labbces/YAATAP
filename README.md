@@ -45,11 +45,11 @@ conda env create -n YAATAP -f env/environment.yml
 
 To run YAATAP, the following files must be configured:
 
-- **[config.yaml](https://github.com/labbces/YAATAP/blob/main/config.yaml)**: contains paths to external tools.  
-- **[genotype_samples.csv](https://github.com/labbces/YAATAP/blob/main/SP80-3280_samples.csv)**: CSV file listing SRA accessions to be downloaded (e.g. `SRR1974519`,`SRR1979656`,`SRR1979657`,...).  
+- **[config.yaml](https://github.com/labbces/YAATAP/blob/main/config/config.yml)**: contains paths to external tools.  
+- **[genotype_samples.csv](https://github.com/labbces/YAATAP/blob/main/samples/SP80-3280_samples.csv)**: CSV file listing SRA accessions to be downloaded (e.g. `SRR1974519`,`SRR1979656`,`SRR1979657`,...).  
 >[!IMPORTANT]
 >The filename must include the genotype name, e.g., `SP80-3280_samples.csv`.  
-- **[parts.csv](https://github.com/labbces/YAATAP/blob/main/parts.csv)**: defines the number of parts for Kraken2 database splitting (e.g., `00`,`01`,`02`,`03`,`04`).
+- **[parts.csv](https://github.com/labbces/YAATAP/blob/main/samples/parts.csv)**: defines the number of parts for Kraken2 database splitting (e.g., `00`,`01`,`02`,`03`,`04`).
 
 ---
 
