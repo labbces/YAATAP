@@ -36,7 +36,7 @@ conda config --add channels bioconda
 conda config --add channels conda-forge
 
 # create YAATAP environment
-conda env create -n YAATAP -f environment.txt
+conda env create -n YAATAP -f env/environment.yml
 ```
 
 ---
