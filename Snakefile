@@ -3,7 +3,7 @@
 # usage:
 # snakemake -p -k --resources load=10 -s Snakefile.v2 --cluster "qsub -q all.q -V -l h={params.server} -cwd -pe smp {threads}" --jobs 10 --jobname "{rulename}.{jobid}"
 
-configfile: "config.yaml"
+configfile: "config/config.yml"
 
 import pandas as pd
 from pandas.errors import EmptyDataError
@@ -18,14 +18,14 @@ sample_file = [file for file in os.listdir() if file.endswith('_samples.csv')][0
 GENOTYPE = os.path.splitext(sample_file)[0].replace('_samples', '')
 
 # extraindo samples separadas por virgula
-samples = pd.read_csv(GENOTYPE+'_samples.csv')
+samples = pd.read_csv("samples/" + GENOTYPE + "_samples.csv")
 
 # definir transcriptoma de referencia - pan-transcriptoma da cana-de-acucar
 reference_transcriptome = "/Storage/data1/riano/Sugarcane/Pantranscriptome/Assemblies/CD-HIT_48_genotypes_transcriptome_salmonInx/"
 
 # dividir o output do kraken em X partes - definidas pelo conteudo do arquivo parts.csv
 # por exemplo - dividir em 5 partes: 00,01,02,03,04
-parts = pd.read_csv("parts.csv")
+parts = pd.read_csv("samples/parts.csv")
 
 # path para executaveis
 fastq_dump = config["software"]["fastq-dump"]
